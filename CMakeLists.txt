@@ -104,4 +104,4 @@ endif()
 include_directories(.)
 
 add_subdirectory(depends)
-add_subdirectory(src)
+add_subdirectory(libmiximus)

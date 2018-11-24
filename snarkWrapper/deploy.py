@@ -35,7 +35,7 @@ from ctypes import cdll
 import ctypes as c
 
 tree_depth = 29
-lib = cdll.LoadLibrary('../build/src/libmiximus.so')
+lib = cdll.LoadLibrary('../build/libmiximus/libmiximus.so')
 #lib = cdll.LoadLibrary('../../test_merkel_tree/build/src/libmiximus.so')
 
 prove = lib.prove
