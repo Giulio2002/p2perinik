@@ -11,7 +11,6 @@ import (
 	"log"
 	mrand "math/rand"
 	"os"
-
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-crypto"
 	"github.com/libp2p/go-libp2p-peerstore"
@@ -23,7 +22,7 @@ func main() {
 	dest := flag.String("d", "", "Destination multiaddr string")
 	help := flag.Bool("help", false, "Display help")
 	debug := flag.Bool("debug", false, "Debug generates the same node ID on every execution")
-
+	keystore_path := flag.String("keystore-path", "", "path to the address keystore")
 	flag.Parse()
 
 	if *help {
@@ -33,7 +32,7 @@ func main() {
 
 		os.Exit(0)
 	}
-
+	setupMetadata(*keystore_path)
 	// If debug is enabled, use a constant random source to generate the peer ID. Only useful for debugging,
 	// off by default. Otherwise, it uses rand.Reader.
 	var r io.Reader
