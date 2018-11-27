@@ -37,8 +37,11 @@ func (c *Command) execute () {
 
 	switch (c.name) {
 		case "deposit":
-			c.err = deposit(c.args);
-			break;
+			c.err = deposit(c.args)
+			break
+		case "send":
+			c.err = send(c.args)
+			break
 		default:
 			c.err = 404
 	}

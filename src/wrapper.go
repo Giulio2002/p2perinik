@@ -10,14 +10,15 @@ import (
     "crypto/ecdsa"
     "encoding/json"
     "golang.org/x/crypto/ssh/terminal"
+    "github.com/ethereum/go-ethereum"
 //    "github.com/ethereum/go-ethereum/accounts"
     "github.com/ethereum/go-ethereum/accounts/keystore"
     "github.com/ethereum/go-ethereum/common"
-//    "github.com/ethereum/go-ethereum/core/types"
+    "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
     "github.com/ethereum/go-ethereum/ethclient"
     "miximus"
-    "time"
+    "log"
 )
 
 var (
@@ -68,8 +69,13 @@ func setupMetadata (keystore_path string) {
 	PrivateKey = keyWrapper.PrivateKey;
 }
 
+func sendData(data string) {
+	rw.WriteString(fmt.Sprintf("%s\n", data))
+	rw.Flush()
+}
+
 func miximusDeposit() {
-	client, err := ethclient.Dial("https://rinkeby.infura.io")
+	client, err := ethclient.Dial("wss://rinkeby.infura.io/ws")
 	// Check if ethclient is connected
 	if err != nil {
 		panic(err)
@@ -90,7 +96,7 @@ func miximusDeposit() {
     auth := bind.NewKeyedTransactor(PrivateKey)
     auth.Nonce = big.NewInt(int64(nonce))
     auth.Value = big.NewInt(1000000000000000000) // in wei
-    auth.GasLimit = uint64(300000) // in units
+    auth.GasLimit = uint64(4000000) // in units
     auth.GasPrice = gasPrice
     // Declare new instance of Miximus
     instance, err := miximus.NewMiximus(MiximusAddress, client)
@@ -106,8 +112,29 @@ func miximusDeposit() {
 	}
 	// Finally deposit
 	tx, err := instance.Deposit(auth, leaf) 
-	// This is awful. :-(
-	for err != nil {
-		receipt, err := EthGetTransactionReceipt(tx)
-	}
+    fmt.Printf("Pending TX: 0x%x\n", tx.Hash())
+
+    query := ethereum.FilterQuery{
+        Addresses: []common.Address{MiximusAddress},
+    }
+
+    var ch = make(chan types.Log)
+    ctx := context.Background()
+
+    sub, err := client.SubscribeFilterLogs(ctx, query, ch)
+
+    if err != nil {
+        log.Println("Subscribe:", err)
+        return
+    }
+
+    for {
+        select {
+        case err := <-sub.Err():
+            log.Fatal(err)
+        case log := <-ch:
+            fmt.Println("Log:", log)
+        }
+    }
+
 }

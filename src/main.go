@@ -27,8 +27,8 @@ func main() {
 
 	if *help {
 		fmt.Printf("This program demonstrates a simple p2p chat application using libp2p\n\n")
-		fmt.Println("Usage: Run './chat -sp <SOURCE_PORT>' where <SOURCE_PORT> can be any port number.")
-		fmt.Println("Now run './chat -d <MULTIADDR>' where <MULTIADDR> is multiaddress of previous listener host.")
+		fmt.Println("Usage: Run './casper -sp <SOURCE_PORT>' where <SOURCE_PORT> can be any port number.")
+		fmt.Println("Now run './casper -d <MULTIADDR>' where <MULTIADDR> is multiaddress of previous listener host.")
 
 		os.Exit(0)
 	}
@@ -85,7 +85,7 @@ func main() {
 			panic("was not able to find actual local port")
 		}
 
-		fmt.Printf("Run './my-project -d /ip4/127.0.0.1/tcp/%v/p2p/%s' on another console.\n", port, host.ID().Pretty())
+		fmt.Printf("Run './casper -d /ip4/127.0.0.1/tcp/%v/p2p/%s' on another console.\n", port, host.ID().Pretty())
 		fmt.Println("You can replace 127.0.0.1 with public IP as well.")
 		fmt.Printf("\nWaiting for incoming connection\n\n")
 

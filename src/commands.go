@@ -20,8 +20,18 @@ func deposit(args []string) int {
 	}
 
 	secret := sha256.Sum256([]byte(strconv.Itoa(rand.Int())))
-	// callContract()
+	miximusDeposit();
 	rw.WriteString(fmt.Sprintf("%s\n", secret))
+	rw.Flush()
+	return 0
+}
+
+func send(args []string) int {
+	if len(args) != 1 {
+		return 2
+	}
+
+	rw.WriteString(fmt.Sprintf("%s\n", args[0]))
 	rw.Flush()
 	return 0
 }
