@@ -11,14 +11,15 @@ import (
     "encoding/json"
     "golang.org/x/crypto/ssh/terminal"
     "github.com/ethereum/go-ethereum"
-//    "github.com/ethereum/go-ethereum/accounts"
-    "github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
     "github.com/ethereum/go-ethereum/common"
-    "github.com/ethereum/go-ethereum/core/types"
+//    "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
     "github.com/ethereum/go-ethereum/ethclient"
     "miximus"
     "log"
+    "time"
 )
 
 var (
@@ -111,30 +112,27 @@ func miximusDeposit() {
 		panic(err)
 	}
 	// Finally deposit
-	tx, err := instance.Deposit(auth, leaf) 
-    fmt.Printf("Pending TX: 0x%x\n", tx.Hash())
+	tx, err := instance.Deposit(auth, leaf)
+	fmt.Printf("Pending TX: 0x%x\n", tx.Hash()) 
+    time.Sleep(30 * time.Second)
 
     query := ethereum.FilterQuery{
         Addresses: []common.Address{MiximusAddress},
     }
 
-    var ch = make(chan types.Log)
     ctx := context.Background()
-
-    sub, err := client.SubscribeFilterLogs(ctx, query, ch)
-
-    if err != nil {
-        log.Println("Subscribe:", err)
-        return
+    logs, err := client.FilterLogs(ctx, query)
+	contractAbi, err := abi.JSON(strings.NewReader(MiximusAbi))
+    for _, vLog := range logs {
+	    	if fmt.Sprintf("%X", vLog.TxHash) == fmt.Sprintf("%X", tx.Hash()) {
+		        var event struct {
+		            index *big.Int
+		         }
+	            err := contractAbi.Unpack(&event, "leafAdded", vLog.Data)
+	            if err != nil {
+	               log.Fatal(err)
+	            }	        
+		        fmt.Println("Hereis" + string(event)   
+    	} 
     }
-
-    for {
-        select {
-        case err := <-sub.Err():
-            log.Fatal(err)
-        case log := <-ch:
-            fmt.Println("Log:", log)
-        }
-    }
-
 }

@@ -1,3 +1,3 @@
 build:
-	go build -o casper
+	go build -o p2perinik
 
