@@ -132,7 +132,8 @@ func miximusDeposit() {
 	            if err != nil {
 	               log.Fatal(err)
 	            }	        
-		        fmt.Println("Hereis" + string(event)   
+		        fmt.Println("Hereis")   
+		        fmt.Println(event)  
     	} 
     }
 }
