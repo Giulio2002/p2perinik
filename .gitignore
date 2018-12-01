@@ -1,3 +1,5 @@
 *.raw
 build/
 *.o
+github.com/
+golang.org/
