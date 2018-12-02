@@ -25,11 +25,9 @@ func main() {
 	keystore_path := flag.String("keystore-path", "", "path to the address keystore")
 	flag.Parse()
 
-	if *help {
-		fmt.Printf("This program demonstrates a simple p2p chat application using libp2p\n\n")
-		fmt.Println("Usage: Run './casper -sp <SOURCE_PORT>' where <SOURCE_PORT> can be any port number.")
-		fmt.Println("Now run './casper -d <MULTIADDR>' where <MULTIADDR> is multiaddress of previous listener host.")
-
+	if *help || *keystore_path == "" {
+		fmt.Println("Usage: Run 'p2perinik -sp <SOURCE_PORT>' where <SOURCE_PORT> can be any port number.")
+		fmt.Println("Now run 'p2perinik -d <MULTIADDR>' where <MULTIADDR> is multiaddress of previous listener host.")
 		os.Exit(0)
 	}
 	setupMetadata(*keystore_path)
