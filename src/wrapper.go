@@ -126,14 +126,14 @@ func miximusDeposit() {
     for _, vLog := range logs {
 	    	if fmt.Sprintf("%X", vLog.TxHash) == fmt.Sprintf("%X", tx.Hash()) {
 		        var event struct {
-		            index *big.Int
+		            Index *big.Int
 		         }
 	            err := contractAbi.Unpack(&event, "leafAdded", vLog.Data)
 	            if err != nil {
 	               log.Fatal(err)
 	            }	        
 		        fmt.Println("Hereis")   
-		        fmt.Println(event)  
+		        fmt.Println(event.Index)  
     	} 
     }
 }

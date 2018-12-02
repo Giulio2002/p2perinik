@@ -3,3 +3,4 @@ build/
 *.o
 github.com/
 golang.org/
+gopkg.in
