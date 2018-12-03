@@ -1,8 +1,6 @@
 package main
 
 import (
-  "math/rand"
-  "crypto/sha256"
   "strconv"
   "fmt"
   "strings"
@@ -19,10 +17,7 @@ func deposit(args []string) int {
 		return 2
 	}
 
-	secret := sha256.Sum256([]byte(strconv.Itoa(rand.Int())))
 	miximusDeposit();
-	rw.WriteString(fmt.Sprintf("%s\n", secret))
-	rw.Flush()
 	return 0
 }
 

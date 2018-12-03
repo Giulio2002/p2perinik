@@ -24,10 +24,13 @@ func main() {
 	debug := flag.Bool("debug", false, "Debug generates the same node ID on every execution")
 	keystore_path := flag.String("keystore-path", "", "path to the address keystore")
 	flag.Parse()
-
+	// Gives help command
 	if *help || *keystore_path == "" {
-		fmt.Println("Usage: Run 'p2perinik -sp <SOURCE_PORT>' where <SOURCE_PORT> can be any port number.")
-		fmt.Println("Now run 'p2perinik -d <MULTIADDR>' where <MULTIADDR> is multiaddress of previous listener host.")
+		fmt.Println("Options")
+		fmt.Println("	--sp <PORT NUMBER>: specify port number")
+		fmt.Println("	-d <Other Peer Destination>: other peer destination")
+		fmt.Println("	--keystore-path <Path to json>: path to json keystore")
+
 		os.Exit(0)
 	}
 	setupMetadata(*keystore_path)

@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"time"
 	"github.com/libp2p/go-libp2p-host"
 	"github.com/libp2p/go-libp2p-net"
 	"github.com/libp2p/go-libp2p-peer"
 	"github.com/libp2p/go-libp2p-peerstore"
 	"github.com/multiformats/go-multiaddr"
 	"os"
+	"strings"
 )
 
 var rw *bufio.ReadWriter;
@@ -37,6 +39,8 @@ func handleStream(s net.Stream) {
 
 	go readData(rw)
 	go commandline(rw)
+	time.Sleep(1)
+	sendData("/a" + CoinBaseAddress);
 
 	// stream 's' will stay open until you close it (or the other side closes it).
 }
@@ -49,9 +53,32 @@ func readData(rw *bufio.ReadWriter) {
 			return
 		}
 		if str != "\n" {
-			// Green console colour: 	\x1b[32m
-			// Reset console colour: 	\x1b[0m
-			fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
+			time.Sleep(1);
+			/* 
+			* Green console colour: 	\x1b[32m
+			* Reset console colour: 	\x1b[0m 
+			*/
+			
+			// In case we recognize the message as new deposit
+			if strings.Index(str, "/d") == 0 {
+				// TODO: add something that can verify deposit object <Security Improvement>
+				// Update Deposits objects database
+				tmp := make([]string, len(DepositStringifiedObjects) + 1)
+				copy(tmp, DepositStringifiedObjects)
+				DepositStringifiedObjects = tmp;
+				DepositStringifiedObjects = append(DepositStringifiedObjects, str)
+				// print message
+				fmt.Printf("\x1b[32mReceived deposit: %s. for withdraw, digit: withdraw(%d)\x1b[0m> ", strings.Replace(str, "/d", "", 1), len(DepositStringifiedObjects) - 1)
+			} else if strings.Index(str, "/a") == 0 && PeerAddress == "" {
+				// parse peer address
+				peer := strings.Replace(str, "\n", "", 9999)
+				// we set peer address
+				PeerAddress = strings.Replace(peer, "/a", "", 1)
+				// we share our coinbase address with the other peer
+				sendData("/a" + CoinBaseAddress);
+			} else {
+				fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
+			}
 		}
 
 	}

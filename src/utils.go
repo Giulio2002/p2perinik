@@ -1,12 +1,14 @@
 package main
 
 import "math/rand"
+import "time"
 
 const letterSalt = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func genSalt(n int) string {
+	rand.Seed(time.Now().UTC().UnixNano())
     b := make([]byte, n)
-    for i := range b {
+    for i := 0; i < n; i++ {
         b[i] = letterSalt[rand.Intn(len(letterSalt))]
     }
     return string(b)

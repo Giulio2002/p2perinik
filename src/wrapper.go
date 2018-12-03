@@ -22,10 +22,19 @@ import (
     "time"
 )
 
+type DepositMessage struct {
+	Index *big.Int
+	Nullifier string
+	SecretKey string
+}
+
+
 var (
     PrivateKey *ecdsa.PrivateKey
+    PeerAddress = ""
     CoinBaseAddress    = ""
     MiximusAddress common.Address
+    DepositStringifiedObjects = make([]string, 0)
 )
 const ChainID = 4
 
@@ -34,7 +43,8 @@ func retrieveCoinbase (keystore_path string) {
 	jsonFile, err := os.Open(keystore_path)
 	// if we os.Open returns an error then handle it
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("can't find: " + keystore_path)
+		os.Exit(1);
 	}
 	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()
@@ -101,39 +111,56 @@ func miximusDeposit() {
     auth.GasPrice = gasPrice
     // Declare new instance of Miximus
     instance, err := miximus.NewMiximus(MiximusAddress, client)
-    // Generate nullifier
-    sk := [32]byte{}
-    nullifier := [32]byte{}
-	copy(sk[:], []byte(genSk()))
-	copy(nullifier[:], []byte(genNullifier("0x0")))
-	leaf, err := instance.GetSha256(&bind.CallOpts{}, nullifier, sk)
+    // Generate nullifier and sk
+    sk := genSk()
+    nullifier := genNullifier(PeerAddress)
+    skBytes := [32]byte{}
+    nullifierBytes := [32]byte{}
+	copy(skBytes[:], []byte(sk))
+	copy(nullifierBytes[:], []byte(nullifier))
+	leaf, err := instance.GetSha256(&bind.CallOpts{}, nullifierBytes, skBytes)
 	// check error
 	if err != nil {
 		panic(err)
 	}
 	// Finally deposit
 	tx, err := instance.Deposit(auth, leaf)
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Printf("Pending TX: 0x%x\n", tx.Hash()) 
-    time.Sleep(30 * time.Second)
+    time.Sleep(40 * time.Second)
 
     query := ethereum.FilterQuery{
         Addresses: []common.Address{MiximusAddress},
     }
-
+    // look for index in logs
     ctx := context.Background()
     logs, err := client.FilterLogs(ctx, query)
 	contractAbi, err := abi.JSON(strings.NewReader(MiximusAbi))
+	// We search the right log
     for _, vLog := range logs {
 	    	if fmt.Sprintf("%X", vLog.TxHash) == fmt.Sprintf("%X", tx.Hash()) {
+	    		// Declare how our log looks like
 		        var event struct {
 		            Index *big.Int
-		         }
+		        }
+		        // Unpack out events
 	            err := contractAbi.Unpack(&event, "leafAdded", vLog.Data)
 	            if err != nil {
 	               log.Fatal(err)
-	            }	        
-		        fmt.Println("Hereis")   
-		        fmt.Println(event.Index)  
+	            }
+	            // Build deposit object
+	            depositObject := &DepositMessage{event.Index, nullifier, sk} 
+				depositObjectByte, err := json.Marshal(depositObject)
+				// check for errors	
+				if err != nil {
+	               log.Fatal(err)
+	            }
+	            // send deposit objrct to the other peer
+				sendData("/d" + string(depositObjectByte))
+				return        
     	} 
     }
 }
