@@ -1,5 +1,10 @@
 package main
-
+/*
+#cgo CFLAGS: -I ../libperinik
+#cgo LDFLAGS: /home/giulio/p2perinik/libperinik/libperinik.a
+#include <p2perinik.h>
+*/
+import "C"
 import (
     "math/big"
     "io/ioutil"
@@ -10,31 +15,23 @@ import (
     "crypto/ecdsa"
     "encoding/json"
     "golang.org/x/crypto/ssh/terminal"
-    "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
+//  "github.com/ethereum/go-ethereum"
+//  "github.com/ethereum/go-ethereum/accounts/abi"
+    "github.com/ethereum/go-ethereum/accounts/keystore"
     "github.com/ethereum/go-ethereum/common"
-//    "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+//  "github.com/ethereum/go-ethereum/core/types"
+    "github.com/ethereum/go-ethereum/accounts/abi/bind"
     "github.com/ethereum/go-ethereum/ethclient"
-    "miximus"
-    "log"
+    "p2perinik"
+    "unsafe"
     "time"
 )
-
-type DepositMessage struct {
-	Index *big.Int
-	Nullifier string
-	SecretKey string
-}
-
 
 var (
     PrivateKey *ecdsa.PrivateKey
     PeerAddress = ""
     CoinBaseAddress    = ""
     MiximusAddress common.Address
-    DepositStringifiedObjects = make([]string, 0)
 )
 const ChainID = 4
 
@@ -58,7 +55,7 @@ func retrieveCoinbase (keystore_path string) {
 
 func setupMetadata (keystore_path string) {
 	retrieveCoinbase(keystore_path)
-	MiximusAddress = common.HexToAddress("0xB586453a8e44c86E012958E48a0DeCED462BD16e")
+	MiximusAddress = common.HexToAddress("0x9361ed86fc7fb0267ebcc3d3c3486ae7b591e684")
 	// ask for passphrase
 	fmt.Print("Insert passphrase for ", CoinBaseAddress, ": ")
 	passphrase, _ := terminal.ReadPassword(0)
@@ -82,10 +79,24 @@ func setupMetadata (keystore_path string) {
 
 func sendData(data string) {
 	rw.WriteString(fmt.Sprintf("%s\n", data))
+	time.Sleep(1)
 	rw.Flush()
+	time.Sleep(1)
 }
 
 func miximusDeposit() {
+	CPeerAddress := C.CString(PeerAddress)
+	password, specialNumber := genKey(PeerAddress);
+	Cpassword := C.CString(password);
+	// password := C.GoString((*C.char)(unsafe.Pointer(Cpassword)));
+	// Prepare to free pointer
+	defer C.free(unsafe.Pointer(CPeerAddress))
+	defer C.free(unsafe.Pointer(Cpassword))
+	// low-level operations
+	Cencrypted := C.P2PERINIK_Encrypt(CPeerAddress, Cpassword);
+	defer C.free(unsafe.Pointer(Cencrypted))
+	encrypted := C.GoString((*C.char)(unsafe.Pointer(Cencrypted)))
+	// init connection with infura
 	client, err := ethclient.Dial("wss://rinkeby.infura.io/ws")
 	// Check if ethclient is connected
 	if err != nil {
@@ -109,58 +120,15 @@ func miximusDeposit() {
     auth.Value = big.NewInt(1000000000000000000) // in wei
     auth.GasLimit = uint64(4000000) // in units
     auth.GasPrice = gasPrice
-    // Declare new instance of Miximus
-    instance, err := miximus.NewMiximus(MiximusAddress, client)
-    // Generate nullifier and sk
-    sk := genSk()
-    nullifier := genNullifier(PeerAddress)
-    skBytes := [32]byte{}
-    nullifierBytes := [32]byte{}
-	copy(skBytes[:], []byte(sk))
-	copy(nullifierBytes[:], []byte(nullifier))
-	leaf, err := instance.GetSha256(&bind.CallOpts{}, nullifierBytes, skBytes)
-	// check error
-	if err != nil {
-		panic(err)
-	}
-	// Finally deposit
-	tx, err := instance.Deposit(auth, leaf)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Pending TX: 0x%x\n", tx.Hash()) 
-    time.Sleep(40 * time.Second)
-
-    query := ethereum.FilterQuery{
-        Addresses: []common.Address{MiximusAddress},
-    }
-    // look for index in logs
-    ctx := context.Background()
-    logs, err := client.FilterLogs(ctx, query)
-	contractAbi, err := abi.JSON(strings.NewReader(MiximusAbi))
-	// We search the right log
-    for _, vLog := range logs {
-	    	if fmt.Sprintf("%X", vLog.TxHash) == fmt.Sprintf("%X", tx.Hash()) {
-	    		// Declare how our log looks like
-		        var event struct {
-		            Index *big.Int
-		        }
-		        // Unpack out events
-	            err := contractAbi.Unpack(&event, "leafAdded", vLog.Data)
-	            if err != nil {
-	               log.Fatal(err)
-	            }
-	            // Build deposit object
-	            depositObject := &DepositMessage{event.Index, nullifier, sk} 
-				depositObjectByte, err := json.Marshal(depositObject)
-				// check for errors	
-				if err != nil {
-	               log.Fatal(err)
-	            }
-	            // send deposit objrct to the other peer
-				sendData("/d" + string(depositObjectByte))
-				return        
-    	} 
-    }
+    // Declare new instantiation
+    instance, err := p2perinik.NewP2Perinik(MiximusAddress, client)
+    // get bytes of encrypted address and password
+    bytesEncrypted, _ := instance.ToBytes(&bind.CallOpts{} ,encrypted);
+    // obtain special hash
+    specialHash , _ := instance.GenerateSpecialHash(&bind.CallOpts{}, bytesEncrypted, common.HexToAddress(PeerAddress), specialNumber)
+    fmt.Println(password);
+    fmt.Println(encrypted);
+    instance.Deposit(auth, bytesEncrypted, specialHash);
+    time.Sleep(40)
+    sendData("/d" + password)
 }

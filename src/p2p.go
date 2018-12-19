@@ -15,6 +15,7 @@ import (
 )
 
 var rw *bufio.ReadWriter;
+var actual = 0;
 
 func addAddrToPeerstore(h host.Host, addr string) peer.ID {
 	maddr, err := multiaddr.NewMultiaddr(addr)
@@ -48,9 +49,8 @@ func handleStream(s net.Stream) {
 func readData(rw *bufio.ReadWriter) {
 	for {
 		str, _ := rw.ReadString('\n')
-
 		if str == "" {
-			return
+			continue
 		}
 		if str != "\n" {
 			time.Sleep(1);
@@ -61,14 +61,9 @@ func readData(rw *bufio.ReadWriter) {
 			
 			// In case we recognize the message as new deposit
 			if strings.Index(str, "/d") == 0 {
-				// TODO: add something that can verify deposit object <Security Improvement>
-				// Update Deposits objects database
-				tmp := make([]string, len(DepositStringifiedObjects) + 1)
-				copy(tmp, DepositStringifiedObjects)
-				DepositStringifiedObjects = tmp;
-				DepositStringifiedObjects = append(DepositStringifiedObjects, str)
 				// print message
-				fmt.Printf("\x1b[32mReceived deposit: %s. for withdraw, digit: withdraw(%d)\x1b[0m> ", strings.Replace(str, "/d", "", 1), len(DepositStringifiedObjects) - 1)
+				fmt.Printf("\x1b[32mReceived deposit: %s. for withdraw, digit: withdraw(%d)\x1b[0m> ", strings.Replace(str, "/d", "", 1), actual)
+				actual++;
 			} else if strings.Index(str, "/a") == 0 && PeerAddress == "" {
 				// parse peer address
 				peer := strings.Replace(str, "\n", "", 9999)

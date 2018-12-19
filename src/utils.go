@@ -5,19 +5,19 @@ import "time"
 
 const letterSalt = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-func genSalt(n int) string {
-	rand.Seed(time.Now().UTC().UnixNano())
-    b := make([]byte, n)
-    for i := 0; i < n; i++ {
-        b[i] = letterSalt[rand.Intn(len(letterSalt))]
+func genKey(base string) (string, uint8) {
+	l := len(base)
+    rand.Seed(time.Now().UTC().UnixNano())
+    bytes := make([]byte, l)
+    specialIndex := randInt(2, uint8(l-1))
+    bytes[0] = byte(0x0)
+    bytes[1] = byte(0x0)
+    for i := 2; i < l; i++ {
+        bytes[i] = byte(randInt(0, 255))
     }
-    return string(b)
+    return string(bytes), uint8(bytes[specialIndex])
 }
 
-func genSk() string {
-	return "0x" + genSalt(64)
-}
-
-func genNullifier(receiver string) string {
-	return receiver + genSalt(24)
+func randInt(min uint8, max uint8) uint8 {
+    return min + uint8(rand.Intn(int(max-min)))
 }
