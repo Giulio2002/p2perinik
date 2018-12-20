@@ -30,3 +30,16 @@ func send(args []string) int {
 	rw.Flush()
 	return 0
 }
+
+func withdraw(args []string) int {
+	if len(args) != 1 {
+		return 2
+	}
+	index, err := strconv.Atoi(args[0])
+	if err != nil {
+		return 2
+	}
+
+	p2perinikWithdraw(keys[index])
+	return 0
+}

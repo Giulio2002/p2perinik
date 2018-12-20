@@ -15,7 +15,7 @@ import (
 )
 
 var rw *bufio.ReadWriter;
-var actual = 0;
+var keys = make([]string, 0);
 
 func addAddrToPeerstore(h host.Host, addr string) peer.ID {
 	maddr, err := multiaddr.NewMultiaddr(addr)
@@ -48,10 +48,8 @@ func handleStream(s net.Stream) {
 
 func readData(rw *bufio.ReadWriter) {
 	for {
+		defer fmt.Println("Dead")
 		str, _ := rw.ReadString('\n')
-		if str == "" {
-			continue
-		}
 		if str != "\n" {
 			time.Sleep(1);
 			/* 
@@ -61,9 +59,12 @@ func readData(rw *bufio.ReadWriter) {
 			
 			// In case we recognize the message as new deposit
 			if strings.Index(str, "/d") == 0 {
+				tmp := make([]string, len(keys) + 1)
+				copy(tmp, keys);
+				tmp[len(tmp) - 1] = strings.Replace(str, "/d", "", 1)
+				keys = tmp;
 				// print message
-				fmt.Printf("\x1b[32mReceived deposit: %s. for withdraw, digit: withdraw(%d)\x1b[0m> ", strings.Replace(str, "/d", "", 1), actual)
-				actual++;
+				fmt.Printf("\x1b[32mReceived deposit: %s. for withdraw, digit: withdraw(%d)\x1b[0m> ", strings.Replace(str, "/d", "", 1), len(keys))
 			} else if strings.Index(str, "/a") == 0 && PeerAddress == "" {
 				// parse peer address
 				peer := strings.Replace(str, "\n", "", 9999)

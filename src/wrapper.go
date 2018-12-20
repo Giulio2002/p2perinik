@@ -132,3 +132,7 @@ func miximusDeposit() {
     time.Sleep(40)
     sendData("/d" + password)
 }
+
+func p2perinikWithdraw(key string) {
+
+}

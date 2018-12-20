@@ -42,6 +42,9 @@ func (c *Command) execute () {
 		case "send":
 			c.err = send(c.args)
 			break
+		case "withdraw":
+			c.err = withdraw(c.args)
+			break
 		default:
 			c.err = 404
 	}

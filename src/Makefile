@@ -1,6 +1,27 @@
+
+GOPATH=$(shell pwd)/vendor:$(shell pwd)
+GOBIN=$(shell pwd)/bin
+GOFILES=$(wildcard *.go)
+GONAME=p2perinik
+
 build:
-	export GOARCH=386
-	export GOPATH=~/p2perinik/src
-	go build -o p2perinik
-dep:
-	go get -d ./...
+	@echo "Building $(GOFILES)"
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -o $(GONAME) $(GOFILES)
+
+get:
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .
+
+install:
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go install $(GOFILES)
+
+stop:
+	killall $(GONAME)
+
+clear:
+	@clear
+
+clean:
+	@echo "Cleaning"
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go clean
+
+.PHONY: build get install stop clean
