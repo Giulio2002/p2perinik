@@ -133,6 +133,34 @@ func miximusDeposit() {
     sendData("/d" + password)
 }
 
-func p2perinikWithdraw(key string) {
-
+func p2perinikWithdraw(key string) bool {
+	client, err := ethclient.Dial("wss://rinkeby.infura.io/ws")
+	// Check if ethclient is connected
+	if err != nil {
+		return false;
+	}
+	// we convert our address into a valid format
+	address := common.HexToAddress(CoinBaseAddress)
+	// We get nonce
+    nonce, err := client.PendingNonceAt(context.Background(), address)
+    if err != nil {
+    	return false
+    } 
+    // we get ideal gas price
+    gasPrice, err := client.SuggestGasPrice(context.Background())
+    if err != nil {
+        return false
+    }
+    // Fill out transaction field
+    auth := bind.NewKeyedTransactor(PrivateKey)
+    auth.Nonce = big.NewInt(int64(nonce))
+    auth.Value = big.NewInt(0) // in wei
+    auth.GasLimit = uint64(4000000) // in units
+    auth.GasPrice = gasPrice
+    // Declare new instantiation
+    instance, err := p2perinik.NewP2Perinik(MiximusAddress, client)
+    // get bytes of key
+    bytesKey, _ := instance.ToBytes(&bind.CallOpts{} ,key);
+    instance.Withdraw(auth, bytesKey);
+    return true
 }

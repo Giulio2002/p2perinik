@@ -32,6 +32,8 @@ func send(args []string) int {
 }
 
 func withdraw(args []string) int {
+	args[0] = strings.Replace(args[0], " ", "", 9999)
+	fmt.Println(len(args))
 	if len(args) != 1 {
 		return 2
 	}
@@ -40,6 +42,11 @@ func withdraw(args []string) int {
 		return 2
 	}
 
-	p2perinikWithdraw(keys[index])
-	return 0
+	success := p2perinikWithdraw(keys[index - 1])
+	if (success) {
+		return 0	
+	} else {
+		return 3
+	}
+
 }
