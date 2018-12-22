@@ -17,6 +17,11 @@ import (
 var rw *bufio.ReadWriter
 var keys = make([]string, 0)
 
+func onPeerDisconnect () {
+	log.Fatalln("Error: Cannot reach other peer. Abort.")
+	os.Exit(0)
+}
+
 func addAddrToPeerstore(h host.Host, addr string) peer.ID {
 	maddr, err := multiaddr.NewMultiaddr(addr)
 	if err != nil {
@@ -47,9 +52,13 @@ func handleStream(s net.Stream) {
 }
 
 func readData(rw *bufio.ReadWriter) {
+	defer onPeerDisconnect()
 	for {
-		defer fmt.Println("Dead")
 		str, _ := rw.ReadString('\n')
+		if (str == "") {
+			return
+		}
+
 		if str != "\n" {
 			time.Sleep(1)
 			/* 
@@ -72,6 +81,7 @@ func readData(rw *bufio.ReadWriter) {
 				PeerAddress = strings.Replace(peer, "/a", "", 1)
 				// we share our coinbase address with the other peer
 				sendData("/a" + CoinBaseAddress)
+				time.Sleep(1)
 			} else {
 				fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
 			}
@@ -81,11 +91,10 @@ func readData(rw *bufio.ReadWriter) {
 }
 
 func commandline(rw *bufio.ReadWriter) {
-	stdReader := bufio.NewReader(os.Stdin)
-
 	for {
+		stdReader := bufio.NewReader(os.Stdin)
 		fmt.Print("> ")
-		sendData, _ := stdReader.ReadString('\n')
+		sendData, _ := stdReader.ReadString('\n') 
 		cmd := newCommand(sendData)
 		cmd.execute()
 	}

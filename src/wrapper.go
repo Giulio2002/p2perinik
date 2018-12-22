@@ -129,7 +129,7 @@ func miximusDeposit() {
     fmt.Println(password)
     fmt.Println(encrypted)
     instance.Deposit(auth, bytesEncrypted, specialHash)
-    time.Sleep(40)
+    time.Sleep(60)
     sendData("/d" + password)
 }
 

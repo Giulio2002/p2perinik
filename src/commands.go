@@ -7,13 +7,6 @@ import (
 )
 
 func deposit(args []string) int {
-	args[0] = strings.Replace(args[0], " ", "", 9999)
-	_, err := strconv.Atoi(args[0])
-
-	if err != nil {
-		return 2
-	}
-
 	miximusDeposit();
 	return 0
 }
