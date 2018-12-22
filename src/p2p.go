@@ -14,8 +14,8 @@ import (
 	"strings"
 )
 
-var rw *bufio.ReadWriter;
-var keys = make([]string, 0);
+var rw *bufio.ReadWriter
+var keys = make([]string, 0)
 
 func addAddrToPeerstore(h host.Host, addr string) peer.ID {
 	maddr, err := multiaddr.NewMultiaddr(addr)
@@ -41,7 +41,7 @@ func handleStream(s net.Stream) {
 	go readData(rw)
 	go commandline(rw)
 	time.Sleep(1)
-	sendData("/a" + CoinBaseAddress);
+	sendData("/a" + CoinBaseAddress)
 
 	// stream 's' will stay open until you close it (or the other side closes it).
 }
@@ -51,7 +51,7 @@ func readData(rw *bufio.ReadWriter) {
 		defer fmt.Println("Dead")
 		str, _ := rw.ReadString('\n')
 		if str != "\n" {
-			time.Sleep(1);
+			time.Sleep(1)
 			/* 
 			* Green console colour: 	\x1b[32m
 			* Reset console colour: 	\x1b[0m 
@@ -60,9 +60,9 @@ func readData(rw *bufio.ReadWriter) {
 			// In case we recognize the message as new deposit
 			if strings.Index(str, "/d") == 0 {
 				tmp := make([]string, len(keys) + 1)
-				copy(tmp, keys);
+				copy(tmp, keys)
 				tmp[len(tmp) - 1] = strings.Replace(str, "/d", "", 1)
-				keys = tmp;
+				keys = tmp
 				// print message
 				fmt.Printf("\x1b[32mReceived deposit: %s. for withdraw, digit: withdraw(%d)\x1b[0m> ", strings.Replace(str, "/d", "", 1), len(keys))
 			} else if strings.Index(str, "/a") == 0 && PeerAddress == "" {
@@ -71,7 +71,7 @@ func readData(rw *bufio.ReadWriter) {
 				// we set peer address
 				PeerAddress = strings.Replace(peer, "/a", "", 1)
 				// we share our coinbase address with the other peer
-				sendData("/a" + CoinBaseAddress);
+				sendData("/a" + CoinBaseAddress)
 			} else {
 				fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
 			}
@@ -85,12 +85,8 @@ func commandline(rw *bufio.ReadWriter) {
 
 	for {
 		fmt.Print("> ")
-		sendData, err := stdReader.ReadString('\n')
-
-		if err != nil {
-			panic(err)
-		}
+		sendData, _ := stdReader.ReadString('\n')
 		cmd := newCommand(sendData)
-		cmd.execute();
+		cmd.execute()
 	}
 }

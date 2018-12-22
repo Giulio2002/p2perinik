@@ -7,9 +7,6 @@ import (
 )
 
 func deposit(args []string) int {
-	if len(args) != 1 {
-		return 2
-	}
 	args[0] = strings.Replace(args[0], " ", "", 9999)
 	_, err := strconv.Atoi(args[0])
 
@@ -48,5 +45,11 @@ func withdraw(args []string) int {
 	} else {
 		return 3
 	}
+}
 
+func help() {
+	fmt.Println("	deposit()     --->  Deposit into mixer contract")
+	fmt.Println("	send(<DATA>)  --->  Send <DATA> as a text message")
+	fmt.Println("	withdraw()    --->  withdraw sent deposits")
+	fmt.Println("	help()        --->  display all possible cli commands\n")
 }

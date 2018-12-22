@@ -84,7 +84,7 @@ func main() {
 			panic("was not able to find actual local port")
 		}
 
-		fmt.Printf("Run './casper -d /ip4/127.0.0.1/tcp/%v/p2p/%s' on another console.\n", port, host.ID().Pretty())
+		fmt.Printf("Run './p2perinik -d /ip4/127.0.0.1/tcp/%v/p2p/%s' on another console.\n", port, host.ID().Pretty())
 		fmt.Println("You can replace 127.0.0.1 with public IP as well.")
 		fmt.Printf("\nWaiting for incoming connection\n\n")
 

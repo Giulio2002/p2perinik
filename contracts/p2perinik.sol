@@ -13,8 +13,10 @@ contract P2Perinik {
     function deposit(bytes memory encryptedAddress, bytes32 specialHash) public payable {
         require(!isEntryPresent(encryptedAddress));
         require(msg.value == 1 ether);
-        EncryptedAddress memory entry = EncryptedAddress(encryptedAddress, specialHash);
+        EncryptedAddress memory entry = EncryptedAddress(new bytes(0), bytes32(0));
         encryptedAddresses.push(entry);
+        encryptedAddresses[encryptedAddresses.length - 1].encryptedAddress = encryptedAddress;
+        encryptedAddresses[encryptedAddresses.length - 1].specialHash = specialHash;
     }
     
     function withdraw(bytes memory passphrase) public {
@@ -25,7 +27,7 @@ contract P2Perinik {
     
     function isEntryPresent(bytes memory encryptedAddress) view private returns(bool){
         for (uint256 i = 0; i < encryptedAddresses.length; i++) {
-            if (bytesToBytes32(abi.encode(encryptedAddresses[i].encryptedAddress)) == bytesToBytes32(abi.encode(encryptedAddress)))
+            if (equalStorage(encryptedAddresses[i].encryptedAddress, encryptedAddress))
                 return true;
         }
         return false;
@@ -97,5 +99,70 @@ contract P2Perinik {
                 return true;
         }
         return false;
+    }
+    
+    function equalStorage(bytes storage _preBytes, bytes memory _postBytes) internal view returns (bool) {
+        bool success = true;
+
+        assembly {
+            // we know _preBytes_offset is 0
+            let fslot := sload(_preBytes_slot)
+            // Decode the length of the stored array like in concatStorage().
+            let slength := div(and(fslot, sub(mul(0x100, iszero(and(fslot, 1))), 1)), 2)
+            let mlength := mload(_postBytes)
+
+            // if lengths don't match the arrays are not equal
+            switch eq(slength, mlength)
+            case 1 {
+                // slength can contain both the length and contents of the array
+                // if length < 32 bytes so let's prepare for that
+                // v. http://solidity.readthedocs.io/en/latest/miscellaneous.html#layout-of-state-variables-in-storage
+                if iszero(iszero(slength)) {
+                    switch lt(slength, 32)
+                    case 1 {
+                        // blank the last byte which is the length
+                        fslot := mul(div(fslot, 0x100), 0x100)
+
+                        if iszero(eq(fslot, mload(add(_postBytes, 0x20)))) {
+                            // unsuccess:
+                            success := 0
+                        }
+                    }
+                    default {
+                        // cb is a circuit breaker in the for loop since there's
+                        //  no said feature for inline assembly loops
+                        // cb = 1 - don't breaker
+                        // cb = 0 - break
+                        let cb := 1
+
+                        // get the keccak hash to get the contents of the array
+                        mstore(0x0, _preBytes_slot)
+                        let sc := keccak256(0x0, 0x20)
+
+                        let mc := add(_postBytes, 0x20)
+                        let end := add(mc, mlength)
+
+                        // the next line is the loop condition:
+                        // while(uint(mc < end) + cb == 2)
+                        for {} eq(add(lt(mc, end), cb), 2) {
+                            sc := add(sc, 1)
+                            mc := add(mc, 0x20)
+                        } {
+                            if iszero(eq(sload(sc), mload(mc))) {
+                                // unsuccess:
+                                success := 0
+                                cb := 0
+                            }
+                        }
+                    }
+                }
+            }
+            default {
+                // unsuccess:
+                success := 0
+            }
+        }
+
+        return success;
     }
 }

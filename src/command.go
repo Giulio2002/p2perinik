@@ -45,10 +45,13 @@ func (c *Command) execute () {
 		case "withdraw":
 			c.err = withdraw(c.args)
 			break
+		case "help":
+			help()
+			break
 		default:
 			c.err = 404
 	}
-	c.displayError();
+	c.displayError()
 }
 
 func (c *Command) displayError () { 
