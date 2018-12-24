@@ -24,6 +24,9 @@ func main() {
 	flag.Parse()
 	// Gives help command
 	if *help || *keystore_path == "" {
+		if *keystore_path == "" {
+			fmt.Println("No Keystore Specified")
+		}
 		fmt.Println("Options")
 		fmt.Println("	--sp <PORT NUMBER>: specify port number")
 		fmt.Println("	-d <Other Peer Destination>: other peer destination")

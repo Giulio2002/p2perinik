@@ -129,7 +129,7 @@ func miximusDeposit() {
     fmt.Println(password)
     fmt.Println(encrypted)
     instance.Deposit(auth, bytesEncrypted, specialHash)
-    time.Sleep(60)
+    time.Sleep(60 * time.Second)
     sendData("/d" + password)
 }
 
@@ -162,5 +162,6 @@ func p2perinikWithdraw(key string) bool {
     // get bytes of key
     bytesKey, _ := instance.ToBytes(&bind.CallOpts{} ,key)
     instance.Withdraw(auth, bytesKey)
+    time.Sleep(60 * time.Second)
     return true
 }

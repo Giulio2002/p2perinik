@@ -45,7 +45,7 @@ func handleStream(s net.Stream) {
 
 	go readData(rw)
 	go commandline(rw)
-	time.Sleep(1)
+	time.Sleep(1 * time.Second)
 	sendData("/a" + CoinBaseAddress)
 
 	// stream 's' will stay open until you close it (or the other side closes it).
@@ -60,7 +60,7 @@ func readData(rw *bufio.ReadWriter) {
 		}
 
 		if str != "\n" {
-			time.Sleep(1)
+			time.Sleep(1 * time.Second)
 			/* 
 			* Green console colour: 	\x1b[32m
 			* Reset console colour: 	\x1b[0m 
@@ -81,7 +81,7 @@ func readData(rw *bufio.ReadWriter) {
 				PeerAddress = strings.Replace(peer, "/a", "", 1)
 				// we share our coinbase address with the other peer
 				sendData("/a" + CoinBaseAddress)
-				time.Sleep(1)
+				time.Sleep(1 * time.Second)
 			} else {
 				fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
 			}
