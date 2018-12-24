@@ -9,7 +9,7 @@ lib = c.cdll.LoadLibrary('../libperinik/libperinik.so')
 
 deploy_gas = 0
 deposit_table = []
-withdraw_gas = []
+withdraw_table = []
 keys = []
 
 def compile():
@@ -56,7 +56,8 @@ def deposit(contract):
     deposit_table.append(tx_receipt["gasUsed"])
 
 def withdraw(contract, key):
-    tx_hash = contract.withdraw( key, transact={'from': w3.eth.accounts[0], 'gas': 4000000})
+    global withdraw_table
+    tx_hash = contract.withdraw( key.encode('utf-8'), transact={'from': w3.eth.accounts[0], 'gas': 4000000})
     tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash, 10000)
     withdraw_table.append(tx_receipt["gasUsed"])
 
@@ -79,10 +80,10 @@ def main():
     print("========== Result Table ==========")   
     print("Deploy Cost: " + str(deploy_gas) + " Gas") 
     print("Deposit Costs:")
-    for idx, d in enumerated(deposit_table):
+    for idx, d in enumerate(deposit_table):
          print ("	Deposit[" + str(idx) + "]: " + str(d))
     print("Withdraw Costs:")
-    for idx, w in enumerated(withdraw_table):
+    for idx, w in enumerate(withdraw_table):
          print ("	Deposit[" + str(idx) + "]: " + str(w))
 
 if __name__ == '__main__':
