@@ -84,7 +84,7 @@ def main():
          print ("	Deposit[" + str(idx) + "]: " + str(d))
     print("Withdraw Costs:")
     for idx, w in enumerate(withdraw_table):
-         print ("	Deposit[" + str(idx) + "]: " + str(w))
+         print ("	Withdraw[" + str(idx) + "]: " + str(w))
 
 if __name__ == '__main__':
     main()
