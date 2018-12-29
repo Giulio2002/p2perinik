@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2018-19 Giulio Rebuffo
  *
@@ -26,48 +25,23 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stdint.h>
-#include <execinfo.h>
-#include <unistd.h>
+#include "config.h"
+#include "get.h"
+#include "post.h"
+#include "utils.h"
 
-#define INIT_RAND srand(time(NULL))
-// Tell us if ADDRESS must be in EIP55
-#define ADDRESS_EIP55 true
-// create new UINT8 PTR
-#define NEW_KEY(size) malloc(sizeof(uint8_t) * size)
-// Calculation for Default Passphrase
-#define PIECE_PASSPHRASE (rand() % UINT8_MAX)
-/* Debug Section */
-// Debug switch
-#define DEBUG 0
-// Display Backtrace (Only if DEBUG is true)
-#define DISPLAY_BACKTRACE do { \
-	  if(DEBUG) { \
-		  void *array[10]; \
-		  size_t size; \
-		  char **strings; \
-		  size_t i; \
-		  size = backtrace (array, 10); \
-		  strings = backtrace_symbols (array, size); \
-		  system("clear"); \
-		  printf ("Obtained %zd stack frames.\n", size); \
-		  for (i = 0; i < size; i++) \
-		     printf ("%s\n", strings[i]); \
-		  free (strings); \
-	  } \
-	 } while(0);
-#define BREAKPOINT_TIME 10 
-#define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME);
-// METADATA
-#define RELEASE_NAME "The Birth" // Release name
-#define ENVIRONMENT "Linux" // Operative System
-#define COMPILER "gcc" // Compile used
-#define LICENSE "MIT" // License
-#define VERSION "1.0.0" // Version
-// And... 
-#define AUTHOR "Giulio Rebuffo" // Your only god
+int main(int argc, char ** argv) {
+    printf("WebAssembly Userver module loaded\n");
+}
+// return name of
+void EMSCRIPTEN_KEEPALIVE USERVER_SetupMetadata(){
+	char * path = malloc(sizeof(char) * 60);
+	sprintf(path, "/address/%s", getAddress());
+	char * name = parseName(GET(USERVER_ADDRESS, path,USERVER_PORT));
+	setName(name);
+}
+
+void EMSCRIPTEN_KEEPALIVE USERVER_NEW(){
+
+}
+

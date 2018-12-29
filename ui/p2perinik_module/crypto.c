@@ -25,55 +25,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
-#include <stdint.h>
-#include <emscripten/emscripten.h>
-
-#define INIT_RAND srand(time(NULL))
-// Tell us if ADDRESS must be in EIP55
-#define ADDRESS_EIP55 true
-// create new UINT8 PTR
-#define NEW_KEY(size) malloc(sizeof(uint8_t) * size)
-// Calculation for Default Passphrase
-#define PIECE_PASSPHRASE (rand() % UINT8_MAX)
-/* Debug Section */
-// Debug switch
-#define DEBUG false
-// Display Backtrace (Only if DEBUG is true)
-#define DISPLAY_BACKTRACE do { \
-	  if(debug) { \
-		  void *array[10]; \
-		  size_t size; \
-		  char **strings; \
-		  size_t i; \
-		  size = backtrace (array, 10); \
-		  strings = backtrace_symbols (array, size); \
-		  // Please don't kill me with PRs for this \
-		  system("clear"); \
-		  printf ("Obtained %zd stack frames.\n", size); \
-		  for (i = 0; i < size; i++) \
-		     printf ("%s\n", strings[i]); \
-		  free (strings); \
-	  } \
-	 } while(0)
-#define BREAKPOINT_TIME 10 
-#define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME)
-// METADATA
-#define RELEASE_NAME "The Birth" // Release name
-#define ENVIRONMENT "Linux" // Operative System
-#define COMPILER "gcc" // Compile used
-#define LICENSE "MIT" // License
-#define VERSION "1.0.0" // Version
-// And... 
-#define AUTHOR "Giulio Rebuffo" // Your only god
-
-struct Encrypted_Passphrase {
-	uint8_t * key;
-	char * encrypted_bytes;
-};
+#include "crypto.h"
 
 struct Encrypted_Passphrase Encrypt(char * bytes, uint8_t * key) {
 	char * encrypted_bytes = malloc(sizeof(char) * strlen(bytes));
@@ -118,26 +70,4 @@ char * Decrypt(struct Encrypted_Passphrase encrypted_bytes) {
 	}
 
 	return decrypted_bytes;
-}
-
-int main(int argc, char ** argv) {
-    printf("WebAssembly P2PERINIK module loaded\n");
-}
-
-char * EMSCRIPTEN_KEEPALIVE P2PERINIK_Encrypt(char * bytes, char * key){
-	struct Encrypted_Passphrase enc = Encrypt(bytes, key);
-	return enc.encrypted_bytes;
-}
-
-char * EMSCRIPTEN_KEEPALIVE P2PERINIK_Encrypt_Default(char * bytes, char ** passphrase_output){
-	struct Encrypted_Passphrase enc = Encrypt_Default(bytes);
-	memcpy(*passphrase_output, enc.key, strlen(enc.key)+1);
-	return enc.encrypted_bytes;
-}
-
-char * EMSCRIPTEN_KEEPALIVE P2PERINIK_Decrypt(char * encrypted, uint8_t * key){
-	struct Encrypted_Passphrase enc;
-	enc.encrypted_bytes = encrypted;
-	enc.key = key;
-	return Decrypt(enc);
 }

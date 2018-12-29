@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2018-19 Giulio Rebuffo
  *
@@ -26,48 +25,52 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stdint.h>
-#include <execinfo.h>
-#include <unistd.h>
+#include "utils.h"
 
-#define INIT_RAND srand(time(NULL))
-// Tell us if ADDRESS must be in EIP55
-#define ADDRESS_EIP55 true
-// create new UINT8 PTR
-#define NEW_KEY(size) malloc(sizeof(uint8_t) * size)
-// Calculation for Default Passphrase
-#define PIECE_PASSPHRASE (rand() % UINT8_MAX)
-/* Debug Section */
-// Debug switch
-#define DEBUG 0
-// Display Backtrace (Only if DEBUG is true)
-#define DISPLAY_BACKTRACE do { \
-	  if(DEBUG) { \
-		  void *array[10]; \
-		  size_t size; \
-		  char **strings; \
-		  size_t i; \
-		  size = backtrace (array, 10); \
-		  strings = backtrace_symbols (array, size); \
-		  system("clear"); \
-		  printf ("Obtained %zd stack frames.\n", size); \
-		  for (i = 0; i < size; i++) \
-		     printf ("%s\n", strings[i]); \
-		  free (strings); \
-	  } \
-	 } while(0);
-#define BREAKPOINT_TIME 10 
-#define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME);
-// METADATA
-#define RELEASE_NAME "The Birth" // Release name
-#define ENVIRONMENT "Linux" // Operative System
-#define COMPILER "gcc" // Compile used
-#define LICENSE "MIT" // License
-#define VERSION "1.0.0" // Version
-// And... 
-#define AUTHOR "Giulio Rebuffo" // Your only god
+char * parseName(char * res) {
+	char * retval = malloc(sizeof(char) * 42);
+	unsigned int i = 0;
+	unsigned int j = 0;
+	// Get the index where the address start
+	while(res[i] != ':')
+		i++;
+	i += 2;
+	// Retrieve name
+	while(res[i] != '\'') {
+		retval[j] = res[i];
+		j++;
+	}
+	return retval;
+}
+
+EM_JS(char *, getAddress, (), {
+	str = localStorage.getItem("address");
+    var utf8 = [];
+    for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+            utf8.push(0xc0 | (charcode >> 6), 
+                      0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+            utf8.push(0xe0 | (charcode >> 12), 
+                      0x80 | ((charcode>>6) & 0x3f), 
+                      0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+            i++;
+            charcode = ((charcode&0x3ff)<<10)|(str.charCodeAt(i)&0x3ff)
+            utf8.push(0xf0 | (charcode >>18), 
+                      0x80 | ((charcode>>12) & 0x3f), 
+                      0x80 | ((charcode>>6) & 0x3f), 
+                      0x80 | (charcode & 0x3f));
+        }
+    }
+    return utf8;
+})
+
+EM_JS(void, setName, (const char* str), {
+  document.getElementById(UTF8ToString("address")).value = UTF8ToString(str);
+})

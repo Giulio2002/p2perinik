@@ -32,7 +32,6 @@
 #include <math.h>
 #include <string.h>
 #include <stdint.h>
-#include <execinfo.h>
 #include <unistd.h>
 
 #define INIT_RAND srand(time(NULL))
@@ -45,22 +44,6 @@
 /* Debug Section */
 // Debug switch
 #define DEBUG 0
-// Display Backtrace (Only if DEBUG is true)
-#define DISPLAY_BACKTRACE do { \
-	  if(DEBUG) { \
-		  void *array[10]; \
-		  size_t size; \
-		  char **strings; \
-		  size_t i; \
-		  size = backtrace (array, 10); \
-		  strings = backtrace_symbols (array, size); \
-		  system("clear"); \
-		  printf ("Obtained %zd stack frames.\n", size); \
-		  for (i = 0; i < size; i++) \
-		     printf ("%s\n", strings[i]); \
-		  free (strings); \
-	  } \
-	 } while(0);
 #define BREAKPOINT_TIME 10 
 #define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME);
 // METADATA

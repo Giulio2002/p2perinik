@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2018-19 Giulio Rebuffo
  *
@@ -26,48 +25,47 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stdint.h>
-#include <execinfo.h>
-#include <unistd.h>
+#include "post.h"
+     
+char * POST(char * host, char * path, int port) {
+    // Setup     
+    char * request = malloc(sizeof(char) * 500);
+    struct hostent *server;
+    struct sockaddr_in serveraddr; 
+    int tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
+    // Check errors 
+    if (tcpSocket < 0)
+        return "Error opening socket";
+    // gethostbyname
+    server = gethostbyname(host);
+    // check for errors
+    if (server == NULL)
+    {
+        return "gethostbyname() failed\n";
+    }
+    // Establish a connection and check for errors
+    bzero((char *) &serveraddr, sizeof(serveraddr));
+    serveraddr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr, (char *)&serveraddr.sin_addr.s_addr, server->h_length);     
+    serveraddr.sin_port = htons(port);
+    if (connect(tcpSocket, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
+        printf("\nError Connecting");
+    else
+        printf("\nSuccessfully Connected");
+    // Create GET request
+    bzero(request, 1000);
+    sprintf(request, "POST %s HTTP/1.1\r\nHost: %s\r\n\r\n", path, host);
+    printf("\n%s", request);
+    // Send GET REQUEST 
+    if (send(tcpSocket, request, strlen(request), 0) < 0)
+        printf("Error with send()");
+    else
+        printf("Successfully sent html fetch request");
+    // Retrieve response 
+    bzero(request, 1000);
+    recv(tcpSocket, request, 999, 0);
+    close(tcpSocket);
+    // return result 
+    return request;
+}
 
-#define INIT_RAND srand(time(NULL))
-// Tell us if ADDRESS must be in EIP55
-#define ADDRESS_EIP55 true
-// create new UINT8 PTR
-#define NEW_KEY(size) malloc(sizeof(uint8_t) * size)
-// Calculation for Default Passphrase
-#define PIECE_PASSPHRASE (rand() % UINT8_MAX)
-/* Debug Section */
-// Debug switch
-#define DEBUG 0
-// Display Backtrace (Only if DEBUG is true)
-#define DISPLAY_BACKTRACE do { \
-	  if(DEBUG) { \
-		  void *array[10]; \
-		  size_t size; \
-		  char **strings; \
-		  size_t i; \
-		  size = backtrace (array, 10); \
-		  strings = backtrace_symbols (array, size); \
-		  system("clear"); \
-		  printf ("Obtained %zd stack frames.\n", size); \
-		  for (i = 0; i < size; i++) \
-		     printf ("%s\n", strings[i]); \
-		  free (strings); \
-	  } \
-	 } while(0);
-#define BREAKPOINT_TIME 10 
-#define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME);
-// METADATA
-#define RELEASE_NAME "The Birth" // Release name
-#define ENVIRONMENT "Linux" // Operative System
-#define COMPILER "gcc" // Compile used
-#define LICENSE "MIT" // License
-#define VERSION "1.0.0" // Version
-// And... 
-#define AUTHOR "Giulio Rebuffo" // Your only god
