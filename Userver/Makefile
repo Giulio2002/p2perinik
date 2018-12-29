@@ -5,7 +5,7 @@ GONAME=Userver
 
 build:
 	@echo "Building $(GOFILES)"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -o $(GONAME) $(GOFILES)
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -o $(GONAME).bin $(GOFILES)
 
 get:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .

@@ -5,3 +5,5 @@ github.com/
 golang.org/
 gopkg.in
 *.wasm
+Userver.bin
+p2perinik.bin
