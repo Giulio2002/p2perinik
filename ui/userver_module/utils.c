@@ -43,6 +43,23 @@ char * parseName(char * res) {
 	return retval;
 }
 
+char * getContent(char * res) {
+	char * content = malloc(sizeof(char) * 500);
+	unsigned int start = 0;
+	unsigned int i = 0;
+	// Find the start of the json
+	while(res[start] != '{')
+		start++;
+	// Retrieve content
+	while(res[start + i] != '}'){
+		content[i] = res[start + i];
+		i++;
+	}
+	content[i + 1] = '}';
+	// Return value
+	return content;
+}
+
 EM_JS(char *, getAddress, (), {
 	str = localStorage.getItem("address");
     var utf8 = [];
@@ -71,6 +88,18 @@ EM_JS(char *, getAddress, (), {
     return utf8;
 })
 
-EM_JS(void, setName, (const char* str), {
+EM_JS(char*, getLoginName, (), {
+  return UTF8ToString(document.getElementById(UTF8ToString("nameInput")).value);
+})
+
+EM_JS(void, setName, (char* str), {
   document.getElementById(UTF8ToString("address")).value = UTF8ToString(str);
+})
+
+EM_JS(int , SetupLocalStorage, (char* json), {
+  let tmp = JSON.Parse(UTF8ToString(json));	
+  if (tmp.address == "undefined") return 0;
+  localStorage.setKey("address", tmp.address);
+  localStorage.setKey("pvt", tmp.pvt);
+  return 1;
 })

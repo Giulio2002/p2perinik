@@ -37,11 +37,14 @@ int main(int argc, char ** argv) {
 void EMSCRIPTEN_KEEPALIVE USERVER_SetupMetadata(){
 	char * path = malloc(sizeof(char) * 60);
 	sprintf(path, "/address/%s", getAddress());
-	char * name = parseName(GET(USERVER_ADDRESS, path,USERVER_PORT));
+	char * name = parseName(GET(USERVER_ADDRESS, path, USERVER_PORT));
 	setName(name);
 }
 
-void EMSCRIPTEN_KEEPALIVE USERVER_NEW(){
-
+int EMSCRIPTEN_KEEPALIVE USERVER_NEW() {
+	char * path = malloc(sizeof(char) * 100);
+	sprintf(path, "/create/%s", getLoginName());
+	char * resJson = getContent(POST(USERVER_ADDRESS, path, USERVER_PORT));
+	return SetupLocalStorage(resJson);;
 }
 

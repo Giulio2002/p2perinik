@@ -32,4 +32,7 @@
 
 char * parseName(char * res);
 char * getAddress();
-void setName(const char * str);
+char * getLoginName();
+int SetupLocalStorage(char * json);
+char * getContent(char * res);
+void setName(char * str);
