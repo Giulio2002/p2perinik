@@ -8,3 +8,5 @@ gopkg.in
 Userver.bin
 p2perinik.bin
 node_modules/
+interface/index.js
+interface/index.wasm
