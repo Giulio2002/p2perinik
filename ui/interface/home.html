@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+  <head>
+    <style type="text/css">
+      img {
+        float: left;
+      }
+    </style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>WebAssembly Example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <img src="http://localhost:4200/user.png" style="width:80px;height:80px;"/>
+    <strong style="font-size: 48px;" id = "name"></strong>
+    <br><br><br><br><br>
+    <br><br><br><br><br>
+    <center>
+      <h2>Send Transaction</h2>
+      <br>
+      TO: <input id = "to" placeholder="username"></input> 
+      <br><br>
+      USD:<input id = "value" placeholder="$"></input> 
+      <br><br>
+      <button onclick="_USERVER_NEW()">Create new account</button>
+      </center>
+    <script src="userver.js"></script>
+    <script type="text/javascript">
+      document.addEventListener('DOMContentLoaded', function() {
+         setTimeout(function(){
+            _USERVER_SetupMetadata();
+         },50);
+      }, false);
+    </script>
+  </body>
+</html>

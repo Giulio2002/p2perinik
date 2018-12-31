@@ -33,5 +33,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include "utils.h"
+#include <emscripten/fetch.h>
 
-char * POST(char * host, char * path, int port);
+void POST_Create(char * address);

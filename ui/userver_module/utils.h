@@ -30,9 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-char * parseName(char * res);
 char * getAddress();
 char * getLoginName();
-int SetupLocalStorage(char * json);
-char * getContent(char * res);
-void setName(char * str);
+int SetupLocalStorage(const char * json);
+void setName(const char * str);

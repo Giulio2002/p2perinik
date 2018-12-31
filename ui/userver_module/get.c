@@ -26,46 +26,26 @@
  * IN THE SOFTWARE.
  */
 #include "get.h"
-     
-char * GET(char * host, char * path, int port) {
-    // Setup     
-    char * request = malloc(sizeof(char) * 500);
-    struct hostent *server;
-    struct sockaddr_in serveraddr; 
-    int tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
-    // Check errors 
-    if (tcpSocket < 0)
-        return "Error opening socket";
-    // gethostbyname
-    server = gethostbyname(host);
-    // check for errors
-    if (server == NULL)
-    {
-        return "gethostbyname() failed\n";
-    }
-    // Establish a connection and check for errors
-    bzero((char *) &serveraddr, sizeof(serveraddr));
-    serveraddr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, (char *)&serveraddr.sin_addr.s_addr, server->h_length);     
-    serveraddr.sin_port = htons(port);
-    if (connect(tcpSocket, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
-        printf("\nError Connecting");
-    else
-        printf("\nSuccessfully Connected");
-    // Create GET request
-    bzero(request, 1000);
-    sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", path, host);
-    printf("\n%s", request);
-    // Send GET REQUEST 
-    if (send(tcpSocket, request, strlen(request), 0) < 0)
-        printf("Error with send()");
-    else
-        printf("Successfully sent html fetch request");
-    // Retrieve response 
-    bzero(request, 1000);
-    recv(tcpSocket, request, 999, 0);
-    close(tcpSocket);
-    // return result 
-    return request;
+
+void downloadSucceeded_Name(emscripten_fetch_t *fetch) {
+  printf("%s\n", fetch->data);  
+  setName(fetch->data);
+  emscripten_fetch_close(fetch); 
 }
+
+void downloadFailed_Name(emscripten_fetch_t *fetch) {
+  printf("HTTP failure status code: %d.\n", fetch->status);
+  emscripten_fetch_close(fetch); // Also free data on failure.
+}
+
+void GET_Name(char * address) {
+  emscripten_fetch_attr_t attr;
+  emscripten_fetch_attr_init(&attr);
+  strcpy(attr.requestMethod, "GET");
+  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+  attr.onsuccess = downloadSucceeded_Name;
+  attr.onerror = downloadFailed_Name;
+  emscripten_fetch(&attr, address);
+}
+
 

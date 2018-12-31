@@ -4,6 +4,8 @@ import (
     "log"
     "net/http"
     "github.com/gorilla/mux"
+    "github.com/gorilla/handlers"
+    "os"
 )
 
 const (
@@ -14,8 +16,11 @@ const (
 // our main function
 func main() {
     router := mux.NewRouter()
+    headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+    originsOk := handlers.AllowedOrigins([]string{os.Getenv("ORIGIN_ALLOWED")})
+    methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
     router.HandleFunc("/create/{name}", CreateAddress).Methods("POST")
     router.HandleFunc("/name/{address}", queryName).Methods("GET")
     router.HandleFunc("/address/{name}", queryAddress).Methods("GET")
-    log.Fatal(http.ListenAndServe(":8000", router))
+    log.Fatal(http.ListenAndServe(":8000", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
 }

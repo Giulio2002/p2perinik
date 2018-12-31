@@ -7,3 +7,4 @@ gopkg.in
 *.wasm
 Userver.bin
 p2perinik.bin
+node_modules/

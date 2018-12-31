@@ -33,5 +33,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <emscripten/fetch.h>
+#include "utils.h"
 
-char * GET(char * host, char * path, int port);
+void GET_Name(char * address);

@@ -17,8 +17,12 @@ import (
 )
 
 func CreateAddress (w http.ResponseWriter, r *http.Request) {
+    //Allow CORS here By * or specific origin
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
     // Initialize main variables
     client, _ := ethclient.Dial("https://rinkeby.infura.io")
+    log.Println("Received create request");
     identityContract, _ := identity.NewIdentity(common.HexToAddress(identityAddress), client)
     // Generate address
     addr, addrPvt, err := generateNewAddress()
@@ -115,6 +119,10 @@ func CreateAddress (w http.ResponseWriter, r *http.Request) {
 }
 
 func queryName (w http.ResponseWriter, r *http.Request) {
+    //Allow CORS here By * or specific origin
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    log.Println("Received query");
     client, _ := ethclient.Dial("https://rinkeby.infura.io")
     identityContract, _ := identity.NewIdentity(common.HexToAddress(identityAddress), client)
     params := mux.Vars(r)
@@ -135,6 +143,10 @@ func queryName (w http.ResponseWriter, r *http.Request) {
 }
 
 func queryAddress (w http.ResponseWriter, r *http.Request) {
+    //Allow CORS here By * or specific origin
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    log.Println("Received query");
     client, _ := ethclient.Dial("https://rinkeby.infura.io")
     identityContract, _ := identity.NewIdentity(common.HexToAddress(identityAddress), client)
     params := mux.Vars(r)

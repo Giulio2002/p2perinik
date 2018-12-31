@@ -33,8 +33,7 @@
 #include <stdint.h>
 #include <unistd.h>
 // Utils
-#define USERVER_ADDRESS "localhost:8000"
-#define USERVER_PORT 8000
+#define USERVER_ADDRESS "http://127.0.0.1:8000"
 /* Debug Section */
 // Debug switch
 #define DEBUG 0

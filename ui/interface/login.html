@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+  <head>
+    <script type="text/javascript">
+    function create() {
+      _USERVER_NEW(); 
+      setTimeout(function(){
+        window.location.href = 'http://localhost:4200/';
+      },30000);   
+      document.body.innerHTML = "<center><img src = 'http://localhost:4200/loading.gif' style = 'width:800px;height:800px;'></img></center>"   
+    }
+    </script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>WebAssembly Example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <br><br><br><br><br>
+    <br><br><br><br><br>
+    <center>
+      <h2>Create a new account(Universal Login)</h2>
+      <br>
+      <input id = "nameInput"></input> 
+      <button onclick="create()">Create new account</button>
+      </center>
+    <script src="userver.js"></script>
+  </body>
+</html>

@@ -28,23 +28,20 @@
 #include "config.h"
 #include "get.h"
 #include "post.h"
-#include "utils.h"
 
 int main(int argc, char ** argv) {
     printf("WebAssembly Userver module loaded\n");
 }
 // return name of
 void EMSCRIPTEN_KEEPALIVE USERVER_SetupMetadata(){
-	char * path = malloc(sizeof(char) * 60);
-	sprintf(path, "/address/%s", getAddress());
-	char * name = parseName(GET(USERVER_ADDRESS, path, USERVER_PORT));
-	setName(name);
+	char * address = malloc(sizeof(char) * 60);
+	sprintf(address, "%s/name/%s", USERVER_ADDRESS, getAddress());
+	GET_Name(address);
 }
 
-int EMSCRIPTEN_KEEPALIVE USERVER_NEW() {
-	char * path = malloc(sizeof(char) * 100);
-	sprintf(path, "/create/%s", getLoginName());
-	char * resJson = getContent(POST(USERVER_ADDRESS, path, USERVER_PORT));
-	return SetupLocalStorage(resJson);;
+void EMSCRIPTEN_KEEPALIVE USERVER_NEW() {
+	char * address = malloc(sizeof(char) * 100);
+	sprintf(address, "%s/create/%s", USERVER_ADDRESS, getLoginName());
+	POST_Create(address);
 }
 
