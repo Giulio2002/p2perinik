@@ -25,20 +25,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+#include "eth.h"
 #include "config.h"
-#include "get.h"
-#include "post.h"
 
-// return name of
-void EMSCRIPTEN_KEEPALIVE USERVER_SetupMetadata(){
-	char * address = malloc(sizeof(char) * 60);
-	sprintf(address, "%s/name/%s", USERVER_ADDRESS, getAddress());
-	GET_Name(address);
+float EMSCRIPTEN_KEEPALIVE USDToETH(float dollars) {
+	return dollars / ethereumPrice;
 }
-
-void EMSCRIPTEN_KEEPALIVE USERVER_NEW() {
-	char * address = malloc(sizeof(char) * 100);
-	sprintf(address, "%s/create/%s", USERVER_ADDRESS, getLoginName());
-	POST_Create(address);
-}
-

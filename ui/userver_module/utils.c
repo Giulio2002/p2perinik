@@ -38,7 +38,10 @@ EM_JS(char*, getLoginName, (), {
 })
 
 EM_JS(void, setName, (const char* str), {
-  let json = JSON.parse(UTF8ToString(str));
+  let json = JSON.parse(UTF8ToString(str).substring(
+    0, 
+    UTF8ToString(str).lastIndexOf("}") + 1
+  ));
   document.getElementById("name").innerHTML = json.name;
 })
 

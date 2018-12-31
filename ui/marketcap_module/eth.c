@@ -25,20 +25,38 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include "config.h"
-#include "get.h"
-#include "post.h"
+#include "eth.h"
 
-// return name of
-void EMSCRIPTEN_KEEPALIVE USERVER_SetupMetadata(){
-	char * address = malloc(sizeof(char) * 60);
-	sprintf(address, "%s/name/%s", USERVER_ADDRESS, getAddress());
-	GET_Name(address);
+float ethereumPrice = 0.0;
+
+EM_JS(float , retrievePrice, (const char* json), {
+  console.log(UTF8ToString(json));	 
+  let tmp = JSON.parse(UTF8ToString(json));	
+  return tmp[0].price_usd;
+})
+
+EM_JS(void , ERROR, (int status), {
+  alert("Couldn't query ethereum price via API. status code: " + status);
+})
+
+void success(emscripten_fetch_t *fetch) {
+  printf("%s\n", fetch->data);  
+  ethereumPrice = retrievePrice(fetch->data);
+  printf("%f\n", ethereumPrice);
+  emscripten_fetch_close(fetch); 
 }
 
-void EMSCRIPTEN_KEEPALIVE USERVER_NEW() {
-	char * address = malloc(sizeof(char) * 100);
-	sprintf(address, "%s/create/%s", USERVER_ADDRESS, getLoginName());
-	POST_Create(address);
+void fail(emscripten_fetch_t *fetch) {
+  ERROR(fetch->status);
+  emscripten_fetch_close(fetch); // Also free data on failure.
 }
 
+void setupEthereumPrice(const char * address) {
+  emscripten_fetch_attr_t attr;
+  emscripten_fetch_attr_init(&attr);
+  strcpy(attr.requestMethod, "GET");
+  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+  attr.onsuccess = success;
+  attr.onerror = fail;
+  emscripten_fetch(&attr, address);
+}

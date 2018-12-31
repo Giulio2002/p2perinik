@@ -1,2 +1,7 @@
-build:
-	cd userver_module; 	make all; mv *.js ../interface/; mv *.wasm ../interface/
+all:
+	emcc main.c marketcap_module/*.c userver_module/*.c -s WASM=1 -O1 -o index.js -s FETCH=1
+	mv index.js interface/
+	mv index.wasm interface/
+clean:
+	rm interface/index.wasm
+	rm interface/index.js

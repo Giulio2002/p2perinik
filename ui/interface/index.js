@@ -1392,9 +1392,9 @@ function integrateWasmJS() {
 
   var method = 'native-wasm';
 
-  var wasmTextFile = 'userver.wast';
-  var wasmBinaryFile = 'userver.wasm';
-  var asmjsCodeFile = 'userver.temp.asm.js';
+  var wasmTextFile = 'index.wast';
+  var wasmBinaryFile = 'index.wasm';
+  var asmjsCodeFile = 'index.temp.asm.js';
 
   if (!isDataURI(wasmTextFile)) {
     wasmTextFile = locateFile(wasmTextFile);
@@ -1638,16 +1638,18 @@ integrateWasmJS();
 
 var ASM_CONSTS = [];
 
+function _ERROR(status){ alert("Couldn't query ethereum price via API. status code: " + status); }
 function _SetupLocalStorage(json){ console.log(UTF8ToString(json)); let tmp = JSON.parse(UTF8ToString(json)); if (tmp.address === undefined) { alert(tmp.error); window.location.href = 'http://localhost:4200/'; return 0; }; localStorage.setItem("address", tmp.address); localStorage.setItem("pvt", tmp.pvt); return 1; }
 function _getAddress(){ addr = localStorage.getItem("address"); return allocate(intArrayFromString(addr), 'i8', ALLOC_NORMAL); }
 function _getLoginName(){ return allocate(intArrayFromString(document.getElementById("nameInput").value), 'i8', ALLOC_NORMAL); }
-function _setName(str){ let json = JSON.parse(UTF8ToString(str)); document.getElementById("name").innerHTML = json.name; }
+function _retrievePrice(json){ console.log(UTF8ToString(json)); let tmp = JSON.parse(UTF8ToString(json)); return tmp[0].price_usd; }
+function _setName(str){ let json = JSON.parse(UTF8ToString(str).substring( 0, UTF8ToString(str).lastIndexOf("}") + 1 )); document.getElementById("name").innerHTML = json.name; }
 
 
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 6400;
+STATICTOP = STATIC_BASE + 6688;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -1656,7 +1658,7 @@ STATICTOP = STATIC_BASE + 6400;
 
 
 
-var STATIC_BUMP = 6400;
+var STATIC_BUMP = 6688;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -2241,17 +2243,20 @@ Module['wasmMaxTableSize'] = 18;
 
 Module.asmGlobalArg = {};
 
-Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "setTempRet0": setTempRet0, "getTempRet0": getTempRet0, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "_SetupLocalStorage": _SetupLocalStorage, "___setErrNo": ___setErrNo, "___syscall140": ___syscall140, "___syscall146": ___syscall146, "___syscall54": ___syscall54, "___syscall6": ___syscall6, "__emscripten_fetch_cache_data": __emscripten_fetch_cache_data, "__emscripten_fetch_delete_cached_data": __emscripten_fetch_delete_cached_data, "__emscripten_fetch_load_cached_data": __emscripten_fetch_load_cached_data, "__emscripten_fetch_xhr": __emscripten_fetch_xhr, "__emscripten_get_fetch_work_queue": __emscripten_get_fetch_work_queue, "_emscripten_is_main_browser_thread": _emscripten_is_main_browser_thread, "_emscripten_is_main_runtime_thread": _emscripten_is_main_runtime_thread, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_emscripten_start_fetch": _emscripten_start_fetch, "_getAddress": _getAddress, "_getLoginName": _getLoginName, "_setName": _setName, "flush_NO_FILESYSTEM": flush_NO_FILESYSTEM, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX };
+Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "setTempRet0": setTempRet0, "getTempRet0": getTempRet0, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "_ERROR": _ERROR, "_SetupLocalStorage": _SetupLocalStorage, "___setErrNo": ___setErrNo, "___syscall140": ___syscall140, "___syscall146": ___syscall146, "___syscall54": ___syscall54, "___syscall6": ___syscall6, "__emscripten_fetch_cache_data": __emscripten_fetch_cache_data, "__emscripten_fetch_delete_cached_data": __emscripten_fetch_delete_cached_data, "__emscripten_fetch_load_cached_data": __emscripten_fetch_load_cached_data, "__emscripten_fetch_xhr": __emscripten_fetch_xhr, "__emscripten_get_fetch_work_queue": __emscripten_get_fetch_work_queue, "_emscripten_is_main_browser_thread": _emscripten_is_main_browser_thread, "_emscripten_is_main_runtime_thread": _emscripten_is_main_runtime_thread, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_emscripten_start_fetch": _emscripten_start_fetch, "_getAddress": _getAddress, "_getLoginName": _getLoginName, "_retrievePrice": _retrievePrice, "_setName": _setName, "flush_NO_FILESYSTEM": flush_NO_FILESYSTEM, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX };
 // EMSCRIPTEN_START_ASM
 var asm =Module["asm"]// EMSCRIPTEN_END_ASM
 (Module.asmGlobalArg, Module.asmLibraryArg, buffer);
 
 Module["asm"] = asm;
+var _USDToETH = Module["_USDToETH"] = function() {  return Module["asm"]["_USDToETH"].apply(null, arguments) };
 var _USERVER_NEW = Module["_USERVER_NEW"] = function() {  return Module["asm"]["_USERVER_NEW"].apply(null, arguments) };
 var _USERVER_SetupMetadata = Module["_USERVER_SetupMetadata"] = function() {  return Module["asm"]["_USERVER_SetupMetadata"].apply(null, arguments) };
+var ___em_js__ERROR = Module["___em_js__ERROR"] = function() {  return Module["asm"]["___em_js__ERROR"].apply(null, arguments) };
 var ___em_js__SetupLocalStorage = Module["___em_js__SetupLocalStorage"] = function() {  return Module["asm"]["___em_js__SetupLocalStorage"].apply(null, arguments) };
 var ___em_js__getAddress = Module["___em_js__getAddress"] = function() {  return Module["asm"]["___em_js__getAddress"].apply(null, arguments) };
 var ___em_js__getLoginName = Module["___em_js__getLoginName"] = function() {  return Module["asm"]["___em_js__getLoginName"].apply(null, arguments) };
+var ___em_js__retrievePrice = Module["___em_js__retrievePrice"] = function() {  return Module["asm"]["___em_js__retrievePrice"].apply(null, arguments) };
 var ___em_js__setName = Module["___em_js__setName"] = function() {  return Module["asm"]["___em_js__setName"].apply(null, arguments) };
 var ___errno_location = Module["___errno_location"] = function() {  return Module["asm"]["___errno_location"].apply(null, arguments) };
 var _free = Module["_free"] = function() {  return Module["asm"]["_free"].apply(null, arguments) };

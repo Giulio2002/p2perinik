@@ -27,12 +27,12 @@ app.get('/router.js', function(req, res) {
     res.sendFile(path.join(__dirname + '/interface/router.js'));
 });
 
-app.get('/userver.js', function(req, res) {
-    res.sendFile(path.join(__dirname + '/interface/userver.js'));
+app.get('/index.js', function(req, res) {
+    res.sendFile(path.join(__dirname + '/interface/index.js'));
 });
 
-app.get('/userver.wasm', function(req, res) {
-    res.sendFile(path.join(__dirname + '/interface/userver.wasm'));
+app.get('/index.wasm', function(req, res) {
+    res.sendFile(path.join(__dirname + '/interface/index.wasm'));
 });
 
 app.listen(4200);
