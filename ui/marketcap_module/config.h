@@ -27,3 +27,15 @@
  */
 #include <stdio.h>
 #define QUERY_ADDRESS "https://api.coinmarketcap.com/v1/ticker/ethereum/"
+/* Debug Section */
+// Debug switch
+#define DEBUG 0
+// Display Backtrace (Only if DEBUG is true)
+#define BREAKPOINT_TIME 10 
+#define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME);
+// METADATA
+#define ENVIRONMENT "Linux" // Operative System
+#define COMPILER "emcc" // Compile used
+#define LICENSE "MIT" // License
+// And... 
+#define AUTHOR "Giulio Rebuffo" // Your only god

@@ -27,6 +27,10 @@ app.get('/router.js', function(req, res) {
     res.sendFile(path.join(__dirname + '/interface/router.js'));
 });
 
+app.get('/lib/tx.js', function(req, res) {
+    res.sendFile(path.join(__dirname + '/interface/lib/tx.js'));
+});
+
 app.get('/index.js', function(req, res) {
     res.sendFile(path.join(__dirname + '/interface/index.js'));
 });

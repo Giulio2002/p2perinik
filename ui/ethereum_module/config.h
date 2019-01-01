@@ -25,27 +25,18 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include "crypto.h"
-#include <emscripten/emscripten.h>
+#include <stdio.h>
 
-char * EMSCRIPTEN_KEEPALIVE P2PERINIK_Encrypt(char * bytes, char * key){
-	struct Encrypted_Passphrase enc = Encrypt(bytes, key);
-	return enc.encrypted_bytes;
-}
-
-char * EMSCRIPTEN_KEEPALIVE P2PERINIK_Encrypt_Default(char * bytes, char ** passphrase_output){
-	struct Encrypted_Passphrase enc = Encrypt_Default(bytes);
-	memcpy(*passphrase_output, enc.key, strlen(enc.key)+1);
-	return enc.encrypted_bytes;
-}
-
-char * EMSCRIPTEN_KEEPALIVE P2PERINIK_Decrypt(char * encrypted, uint8_t * key){
-	struct Encrypted_Passphrase enc;
-	enc.encrypted_bytes = encrypted;
-	enc.key = key;
-	return Decrypt(enc);
-}
-
-int main(int argc, char ** argv) {
-    printf("WebAssembly P2PERINIK module loaded\n");
-}
+#define ETHEREUM_NODE "https://rinkeby.infura.io"                                                                              
+/* Debug Section */
+// Debug switch
+#define DEBUG 0
+// Display Backtrace (Only if DEBUG is true)
+#define BREAKPOINT_TIME 10 
+#define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME);
+// METADATA
+#define ENVIRONMENT "Linux" // Operative System
+#define COMPILER "emcc" // Compile used
+#define LICENSE "MIT" // License
+// And... 
+#define AUTHOR "Giulio Rebuffo" // Your only god

@@ -31,3 +31,7 @@
 float EMSCRIPTEN_KEEPALIVE USDToETH(float dollars) {
 	return dollars / ethereumPrice;
 }
+
+float EMSCRIPTEN_KEEPALIVE ETHToUSD(float ethers) {
+	return ethers * ethereumPrice;
+}

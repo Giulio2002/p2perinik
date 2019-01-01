@@ -30,8 +30,14 @@
 float ethereumPrice = 0.0;
 
 EM_JS(float , retrievePrice, (const char* json), {
-  console.log(UTF8ToString(json));	 
-  let tmp = JSON.parse(UTF8ToString(json));	
+  console.log(UTF8ToString(json).substring(
+    0, 
+    UTF8ToString(json).lastIndexOf("}") + 1
+  ));	 
+  let tmp = JSON.parse(UTF8ToString(json).substring(
+    0, 
+    UTF8ToString(json).lastIndexOf("]") + 1
+  ));	
   return tmp[0].price_usd;
 })
 

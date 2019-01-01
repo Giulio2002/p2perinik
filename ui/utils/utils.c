@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2018-19 Giulio Rebuffo
  *
@@ -26,31 +25,38 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stdint.h>
-#include <unistd.h>
+#include "utils.h"
 
-#define INIT_RAND srand(time(NULL))
-// Tell us if ADDRESS must be in EIP55
-#define ADDRESS_EIP55 true
-// create new UINT8 PTR
-#define NEW_KEY(size) malloc(sizeof(uint8_t) * size)
-// Calculation for Default Passphrase
-#define PIECE_PASSPHRASE (rand() % UINT8_MAX)
-/* Debug Section */
-// Debug switch
-#define DEBUG 0
-#define BREAKPOINT_TIME 10 
-#define BREAKPOINT if(DEBUG) sleep(BREAKPOINT_TIME);
-// METADATA
-#define RELEASE_NAME "The Birth" // Release name
-#define ENVIRONMENT "Linux" // Operative System
-#define COMPILER "gcc" // Compile used
-#define LICENSE "MIT" // License
-#define VERSION "1.0.0" // Version
-// And... 
-#define AUTHOR "Giulio Rebuffo" // Your only god
+EM_JS(char *, getAddress, (), {
+	addr = localStorage.getItem("address");
+	return allocate(intArrayFromString(addr), 'i8', ALLOC_NORMAL);
+})
+
+EM_JS(char*, getLoginName, (), {
+  return allocate(intArrayFromString(document.getElementById("nameInput").value), 'i8', ALLOC_NORMAL);
+})
+
+EM_JS(void, setName, (const char* str), {
+  let json = JSON.parse(UTF8ToString(str).substring(
+    0, 
+    UTF8ToString(str).lastIndexOf("}") + 1
+  ));
+  document.getElementById("name").innerHTML = json.name;
+})
+
+EM_JS(int , SetupLocalStorage, (const char* json), {
+  console.log(UTF8ToString(json));	 
+  let tmp = JSON.parse(UTF8ToString(json));	
+  if (tmp.address === undefined) {
+	  	alert(tmp.error);
+	  	window.location.href = 'http://localhost:4200/';
+	  	return 0;
+  };
+  localStorage.setItem("address", tmp.address);
+  localStorage.setItem("pvt", tmp.pvt);
+  return 1;
+})
+
+EM_JS(void, alert, (char* str), {
+  alert(UTF8ToString(str));
+})

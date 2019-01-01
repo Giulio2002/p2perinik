@@ -34,6 +34,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <emscripten/fetch.h>
-#include "utils.h"
+#include "../utils/utils.h"
 
 void GET_Name(char * address);
+void GET_Address(char * address,void (*success)(emscripten_fetch_t *), void (*fail)(emscripten_fetch_t *));

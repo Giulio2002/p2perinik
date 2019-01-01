@@ -25,12 +25,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+#include "config.h"
+#include "../utils/utils.h"
+#include <emscripten/fetch.h>
 #include <emscripten/emscripten.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
-char * getAddress();
-char * getLoginName();
-int SetupLocalStorage(const char * json);
-void setName(const char * str);
+void transact(char * signedTransaction);
+char * generateSignedTransaction(char * receiver, unsigned long int eth);

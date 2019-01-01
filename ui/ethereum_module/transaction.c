@@ -25,35 +25,48 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include "get.h"
+#include "ethereum.h"
 
-void downloadSucceeded_Name(emscripten_fetch_t *fetch) {
-  printf("%s\n", fetch->data);  
-  setName(fetch->data);
+void onTransactionSuccess(emscripten_fetch_t *fetch) {
+  alert("the money have been successfully transfered");  
+  printf("%s\n", fetch->data);
   emscripten_fetch_close(fetch); 
 }
 
-void downloadFailed_Name(emscripten_fetch_t *fetch) {
+void onTransactionFail(emscripten_fetch_t *fetch) {
   printf("HTTP failure status code: %d.\n", fetch->status);
   emscripten_fetch_close(fetch); // Also free data on failure.
 }
 
-void GET_Name(char * address) {
+
+void transact(char * signedTransaction) {
   emscripten_fetch_attr_t attr;
   emscripten_fetch_attr_init(&attr);
-  strcpy(attr.requestMethod, "GET");
+  strcpy(attr.requestMethod, "POST");
   attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-  attr.onsuccess = downloadSucceeded_Name;
-  attr.onerror = downloadFailed_Name;
-  emscripten_fetch(&attr, address);
+  char * data = malloc(sizeof(char) * 400);
+  sprintf(data,"{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendRawTransaction\",\"params\":[%s],\"id\":4}", signedTransaction);
+  attr.requestData = data;
+  attr.requestDataSize = sizeof(attr.requestData);
+  attr.onsuccess = onTransactionSuccess;
+  attr.onerror = onTransactionFail;
+  emscripten_fetch(&attr, ETHEREUM_NODE);
 }
 
-void GET_Address(char * address,void (*success)(emscripten_fetch_t *), void (*fail)(emscripten_fetch_t *)) {
-  emscripten_fetch_attr_t attr;
-  emscripten_fetch_attr_init(&attr);
-  strcpy(attr.requestMethod, "GET");
-  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-  attr.onsuccess = success;
-  attr.onerror = fail;
-  emscripten_fetch(&attr, address);
-}
+EM_JS(char * , generateSignedTransaction, (char * receiver, unsigned long int eth), {
+	const txParams = {
+	  nonce: '0x6', // Replace by nonce for your account on geth node
+	  gasPrice: '0x09184e72a000', 
+	  gasLimit: '0x30000',
+	  to: UTF8ToString(receiver), 
+	  value: eth * (10 ** 18)
+	};
+	// Transaction is created
+	const tx = new ethereumjs.Tx(txParams);
+	const privKey = new ethereumjs.Buffer.Buffer.from(localStorage.getItem('pvt'), 'hex');
+	// Transaction is signed
+	tx.sign(privKey);
+	const serializedTx = tx.serialize();
+	const rawTx = '0x' + serializedTx.toString('hex');
+	return allocate(intArrayFromString(rawTx), 'i8', ALLOC_NORMAL);
+})

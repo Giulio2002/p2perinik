@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2018-19 Giulio Rebuffo
  *
@@ -26,13 +25,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include "config.h"
+#include <emscripten/emscripten.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-struct Encrypted_Passphrase {
-	uint8_t * key;
-	char * encrypted_bytes;
-};
-
-struct Encrypted_Passphrase Encrypt(char * bytes, uint8_t * key);
-struct Encrypted_Passphrase Encrypt_Default(char * bytes);
-char * Decrypt(struct Encrypted_Passphrase encrypted_bytes);
+char * getAddress();
+char * getLoginName();
+int SetupLocalStorage(const char * json);
+void setName(const char * str);
+void alert(char * str);
