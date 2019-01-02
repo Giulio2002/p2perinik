@@ -25,12 +25,24 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <string.h>
-#include <stdio.h>
-#include <emscripten/emscripten.h>
-#include <emscripten/fetch.h>
+#include "ethereum.h"
 
-extern float ethereumPrice;
-void setupEthereumPrice(const char * address);
-float  ETHToUSD(float ethers);
-float  USDToETH(float dollars); 
+EM_JS(void , setBalance, (const char * json), {
+  tmp = JSON.parse(UTF8ToString(json).substring(
+      0, 
+      UTF8ToString(json).lastIndexOf("}") + 1
+    ));
+  if( tmp.error != undefined) {
+    alert("Couldn't retrieve balance");
+  } else {
+    document.getElementById("balance").innerHTML = "(" + _ETHToUSD(tmp.result / (10 ** 18)).toFixed(2) + " $)";
+  }
+})
+
+void onBalanceRetrieved(emscripten_fetch_t *fetch){
+  setBalance(fetch->data);
+}
+
+void onBalanceFailed(emscripten_fetch_t *fetch){
+  alert("Couldn't retrieve balance");
+}

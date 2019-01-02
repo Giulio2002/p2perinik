@@ -27,8 +27,18 @@
  */
 #include "config.h"
 #include "../utils/utils.h"
+#include "../marketcap_module/eth.h"
+#include "../userver_module/get.h"
 #include <emscripten/fetch.h>
 #include <emscripten/emscripten.h>
+#include <string.h>
+
+extern char * current_nonce;
 
 void transact(char * signedTransaction);
-char * generateSignedTransaction(char * receiver, unsigned long int eth);
+char * generateSignedTransaction(const char * receiver,const char * nonce,float eth);
+void obtainNonce();
+void onNonceSuccess(emscripten_fetch_t *fetch);
+void onNonceFail(emscripten_fetch_t *fetch);
+void onBalanceRetrieved(emscripten_fetch_t *fetch);
+void onBalanceFailed(emscripten_fetch_t *fetch);

@@ -35,6 +35,11 @@ app.get('/index.js', function(req, res) {
     res.sendFile(path.join(__dirname + '/interface/index.js'));
 });
 
+app.get('/index.worker.js', function(req, res) {
+    res.sendFile(path.join(__dirname + '/interface/index.worker.js'));
+});
+
+
 app.get('/index.wasm', function(req, res) {
     res.sendFile(path.join(__dirname + '/interface/index.wasm'));
 });

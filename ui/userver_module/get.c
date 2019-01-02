@@ -38,7 +38,9 @@ void downloadFailed_Name(emscripten_fetch_t *fetch) {
   emscripten_fetch_close(fetch); // Also free data on failure.
 }
 
-void GET_Name(char * address) {
+void GET_Name(char * eth_address) {
+  char * address = malloc(sizeof(char) * 100);
+  sprintf(address, "%s/name/%s", USERVER_ADDRESS, eth_address);
   emscripten_fetch_attr_t attr;
   emscripten_fetch_attr_init(&attr);
   strcpy(attr.requestMethod, "GET");
@@ -48,7 +50,9 @@ void GET_Name(char * address) {
   emscripten_fetch(&attr, address);
 }
 
-void GET_Address(char * address,void (*success)(emscripten_fetch_t *), void (*fail)(emscripten_fetch_t *)) {
+void GET_Address(char * name,void (*success)(emscripten_fetch_t *), void (*fail)(emscripten_fetch_t *)) {
+  char * address = malloc(sizeof(char) * 100);
+  sprintf(address, "%s/address/%s", USERVER_ADDRESS, name);
   emscripten_fetch_attr_t attr;
   emscripten_fetch_attr_init(&attr);
   strcpy(attr.requestMethod, "GET");

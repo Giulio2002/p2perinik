@@ -35,3 +35,4 @@ char * getLoginName();
 int SetupLocalStorage(const char * json);
 void setName(const char * str);
 void alert(char * str);
+char * getElementById(char * id);

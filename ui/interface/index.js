@@ -1,2552 +1,791 @@
-// Copyright 2010 The Emscripten Authors.  All rights reserved.
+// Copyright 2014 The Emscripten Authors.  All rights reserved.
 // Emscripten is available under two separate licenses, the MIT license and the
 // University of Illinois/NCSA Open Source License.  Both these licenses can be
 // found in the LICENSE file.
 
-// The Module object: Our interface to the outside world. We import
-// and export values on it. There are various ways Module can be used:
-// 1. Not defined. We create it here
-// 2. A function parameter, function(Module) { ..generated code.. }
-// 3. pre-run appended it, var Module = {}; ..generated code..
-// 4. External script tag defines var Module.
-// We need to check if Module already exists (e.g. case 3 above).
-// Substitution will be replaced with actual code on later stage of the build,
-// this way Closure Compiler will not mangle it (e.g. case 4. above).
-// Note that if you want to run closure, and also to use Module
-// after the generated code, you will need to define   var Module = {};
-// before the code. Then that object will be used in the code, and you
-// can continue to use Module afterwards as well.
-var Module = typeof Module !== 'undefined' ? Module : {};
+// WebGLWorker client code
 
-// --pre-jses are emitted after the Module integration code, so that they can
-// refer to Module (if they choose; they can also define Module)
-// {{PRE_JSES}}
-
-// Sometimes an existing Module object exists with properties
-// meant to overwrite the default module functionality. Here
-// we collect those properties and reapply _after_ we configure
-// the current environment's defaults to avoid having to be so
-// defensive during initialization.
-var moduleOverrides = {};
-var key;
-for (key in Module) {
-  if (Module.hasOwnProperty(key)) {
-    moduleOverrides[key] = Module[key];
-  }
+function assert(x) {
+  if (!x) throw 'failed assert';
 }
 
-Module['arguments'] = [];
-Module['thisProgram'] = './this.program';
-Module['quit'] = function(status, toThrow) {
-  throw toThrow;
-};
-Module['preRun'] = [];
-Module['postRun'] = [];
+function WebGLClient() {
+  var objects = {};
 
-// Determine the runtime environment we are in. You can customize this by
-// setting the ENVIRONMENT setting at compile time (see settings.js).
+  var ctx = null;
+  var buffer = null;
+  var i = 0;
+  var skippable = false;
+  var currFrameBuffer = null;
 
-var ENVIRONMENT_IS_WEB = false;
-var ENVIRONMENT_IS_WORKER = false;
-var ENVIRONMENT_IS_NODE = false;
-var ENVIRONMENT_IS_SHELL = false;
-ENVIRONMENT_IS_WEB = typeof window === 'object';
-ENVIRONMENT_IS_WORKER = typeof importScripts === 'function';
-ENVIRONMENT_IS_NODE = typeof process === 'object' && typeof require === 'function' && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
-ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
-
-
-// Three configurations we can be running in:
-// 1) We could be the application main() thread running in the main JS UI thread. (ENVIRONMENT_IS_WORKER == false and ENVIRONMENT_IS_PTHREAD == false)
-// 2) We could be the application main() thread proxied to worker. (with Emscripten -s PROXY_TO_WORKER=1) (ENVIRONMENT_IS_WORKER == true, ENVIRONMENT_IS_PTHREAD == false)
-// 3) We could be an application pthread running in a worker. (ENVIRONMENT_IS_WORKER == true and ENVIRONMENT_IS_PTHREAD == true)
-
-// `/` should be present at the end if `scriptDirectory` is not empty
-var scriptDirectory = '';
-function locateFile(path) {
-  if (Module['locateFile']) {
-    return Module['locateFile'](path, scriptDirectory);
-  } else {
-    return scriptDirectory + path;
+  function func0(name) {
+    ctx[name]();
   }
-}
+  function func1(name) {
+    ctx[name](buffer[i]);
+    i++;
+  }
+  function func2(name) {
+    ctx[name](buffer[i], buffer[i+1]);
+    i += 2;
+  }
+  function func3(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2]);
+    i += 3;
+  }
+  function func4(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]);
+    i += 4;
+  }
+  function func5(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4]);
+    i += 5;
+  }
+  function func6(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4], buffer[i+5]);
+    i += 6;
+  }
+  function func7(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4], buffer[i+5], buffer[i+6]);
+    i += 7;
+  }
+  function func9(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4], buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
+    i += 9;
+  }
 
-if (ENVIRONMENT_IS_NODE) {
-  scriptDirectory = __dirname + '/';
+  // lookuppers, convert integer ids to cached objects for some args
+  function func1L0(name) {
+    ctx[name](objects[buffer[i]]);
+    i++;
+  }
+  function func2L0(name) {
+    ctx[name](objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function func2L0L1(name) {
+    ctx[name](objects[buffer[i]], objects[buffer[i+1]]);
+    i += 2;
+  }
+  function func2L1_(name) {
+    ctx[name](buffer[i], buffer[i+1] ? objects[buffer[i+1]] : null);
+    i += 2;
+  }
+  function func3L0(name) {
+    ctx[name](objects[buffer[i]], buffer[i+1], buffer[i+2]);
+    i += 3;
+  }
+  function func4L3_(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2], buffer[i+3] ? objects[buffer[i+3]] : null);
+    i += 4;
+  }
+  function func5L3_(name) {
+    ctx[name](buffer[i], buffer[i+1], buffer[i+2], buffer[i+3] ? objects[buffer[i+3]] : null, buffer[i+4]);
+    i += 5;
+  }
 
-  // Expose functionality in the same simple way that the shells work
-  // Note that we pollute the global namespace here, otherwise we break in node
-  var nodeFS;
-  var nodePath;
+  // constructors, last argument is the id to save as
+  function funcC0(name) {
+    var object = ctx[name]();
+    var id = buffer[i++];
+    objects[id] = object;
+  }
+  function funcC1(name) {
+    var object = ctx[name](buffer[i++]);
+    var id = buffer[i++];
+    objects[id] = object;
+  }
+  function funcC2(name) {
+    var object = ctx[name](buffer[i++], buffer[i++]);
+    var id = buffer[i++];
+    objects[id] = object;
+  }
+  function funcC2L0(name) {
+    var object = ctx[name](objects[buffer[i++]], buffer[i++]);
+    var id = buffer[i++];
+    objects[id] = object;
+  }
 
-  Module['read'] = function shell_read(filename, binary) {
-    var ret;
-      if (!nodeFS) nodeFS = require('fs');
-      if (!nodePath) nodePath = require('path');
-      filename = nodePath['normalize'](filename);
-      ret = nodeFS['readFileSync'](filename);
-    return binary ? ret : ret.toString();
-  };
+  // destructors, stop holding on to the object in the cache
+  function funcD0(name) {
+    var id = buffer[i++];
+    var object = objects[id];
+    objects[id] = null;
+    ctx[name](object);
+  }
 
-  Module['readBinary'] = function readBinary(filename) {
-    var ret = Module['read'](filename, true);
-    if (!ret.buffer) {
-      ret = new Uint8Array(ret);
+  // special cases/optimizations
+  function bindFramebuffer() {
+    currFrameBuffer = buffer[i+1] ? objects[buffer[i+1]] : null;
+    ctx.bindFramebuffer(buffer[i], currFrameBuffer);
+    i += 2;
+  }
+  function drawArrays(name) {
+    if (!skippable || currFrameBuffer !== null) {
+      ctx.drawArrays(buffer[i], buffer[i+1], buffer[i+2]);
     }
-    assert(ret.buffer);
-    return ret;
+    i += 3;
+  }
+  function drawElements(name) {
+    if (!skippable || currFrameBuffer !== null) {
+      ctx.drawElements(buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]);
+    }
+    i += 4;
+  }
+  function enable() {
+    ctx.enable(buffer[i++]);
+  }
+  function disable() {
+    ctx.disable(buffer[i++]);
+  }
+  function enableVertexAttribArray() {
+    ctx.enableVertexAttribArray(buffer[i++]);
+  }
+  function disableVertexAttribArray() {
+    ctx.disableVertexAttribArray(buffer[i++]);
+  }
+  function activeTexture() {
+    ctx.activeTexture(buffer[i++]);
+  }
+  function uniform1i() {
+    ctx.uniform1i(objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function uniform1f() {
+    ctx.uniform1f(objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function uniform1fv() {
+    ctx.uniform1fv(objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function uniform2fv() {
+    ctx.uniform2fv(objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function uniform1iv() {
+    ctx.uniform1iv(objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function uniform3f() {
+    ctx.uniform3f(objects[buffer[i]], buffer[i+1], buffer[i+2], buffer[i+3]);
+    i += 4;
+  }
+  function uniform3fv() {
+    ctx.uniform3fv(objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function uniform4fv() {
+    ctx.uniform4fv(objects[buffer[i]], buffer[i+1]);
+    i += 2;
+  }
+  function vertexAttribPointer() {
+    ctx.vertexAttribPointer(buffer[i], buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4], buffer[i+5]);
+    i += 6;
+  }
+
+  var calls = {
+    0: { name: 'NULL', func: func0 },
+    1: { name: 'getExtension', func: func1 },
+    2: { name: 'enable', func: enable },
+    3: { name: 'disable', func: disable },
+    4: { name: 'clear', func: func1 },
+    5: { name: 'clearColor', func: func4 },
+    6: { name: 'createShader', func: funcC1 },
+    7: { name: 'deleteShader', func: funcD0 },
+    8: { name: 'shaderSource', func: func2L0 },
+    9: { name: 'compileShader', func: func1L0 },
+    10: { name: 'createProgram', func: funcC0 },
+    11: { name: 'deleteProgram', func: funcD0 },
+    12: { name: 'attachShader', func: func2L0L1 },
+    13: { name: 'bindAttribLocation', func: func3L0 },
+    14: { name: 'linkProgram', func: func1L0 },
+    15: { name: 'getProgramParameter', func: function() { assert(ctx.getProgramParameter(objects[buffer[i++]], buffer[i++]), 'we cannot handle errors, we are async proxied WebGL'); } },
+    16: { name: 'getUniformLocation', func: funcC2L0 },
+    17: { name: 'useProgram', func: func1L0 },
+    18: { name: 'uniform1i', func: uniform1i },
+    19: { name: 'uniform1f', func: uniform1f },
+    20: { name: 'uniform3fv', func: uniform3fv },
+    21: { name: 'uniform4fv', func: uniform4fv },
+    22: { name: 'uniformMatrix4fv', func: func3L0 },
+    23: { name: 'vertexAttrib4fv', func: func2 },
+    24: { name: 'createBuffer', func: funcC0 },
+    25: { name: 'deleteBuffer', func: funcD0 },
+    26: { name: 'bindBuffer', func: func2L1_ },
+    27: { name: 'bufferData', func: func3 },
+    28: { name: 'bufferSubData', func: func3 },
+    29: { name: 'viewport', func: func4 },
+    30: { name: 'vertexAttribPointer', func: vertexAttribPointer },
+    31: { name: 'enableVertexAttribArray', func: enableVertexAttribArray },
+    32: { name: 'disableVertexAttribArray', func: disableVertexAttribArray },
+    33: { name: 'drawArrays', func: drawArrays },
+    34: { name: 'drawElements', func: drawElements },
+    35: { name: 'getError', func: function() { assert(ctx.getError() === ctx.NO_ERROR, 'we cannot handle errors, we are async proxied WebGL') } },
+    36: { name: 'createTexture', func: funcC0 },
+    37: { name: 'deleteTexture', func: funcD0 },
+    38: { name: 'bindTexture', func: func2L1_ },
+    39: { name: 'texParameteri', func: func3 },
+    40: { name: 'texImage2D', func: func9 },
+    41: { name: 'compressedTexImage2D', func: func7 },
+    42: { name: 'activeTexture', func: activeTexture },
+    43: { name: 'getShaderParameter', func: function() { assert(ctx.getShaderParameter(objects[buffer[i++]], buffer[i++]), 'we cannot handle errors, we are async proxied WebGL'); } },
+    44: { name: 'clearDepth', func: func1 },
+    45: { name: 'depthFunc', func: func1 },
+    46: { name: 'frontFace', func: func1 },
+    47: { name: 'cullFace', func: func1 },
+    48: { name: 'pixelStorei', func: func2 },
+    49: { name: 'depthMask', func: func1 },
+    50: { name: 'depthRange', func: func2 },
+    51: { name: 'blendFunc', func: func2 },
+    52: { name: 'scissor', func: func4 },
+    53: { name: 'colorMask', func: func4 },
+    54: { name: 'lineWidth', func: func1 },
+    55: { name: 'createFramebuffer', func: funcC0 },
+    56: { name: 'deleteFramebuffer', func: funcD0 },
+    57: { name: 'bindFramebuffer', func: bindFramebuffer },
+    58: { name: 'framebufferTexture2D', func: func5L3_ },
+    59: { name: 'createRenderbuffer', func: funcC0 },
+    60: { name: 'deleteRenderbuffer', func: funcD0 },
+    61: { name: 'bindRenderbuffer', func: func2L1_ },
+    62: { name: 'renderbufferStorage', func: func4 },
+    63: { name: 'framebufferRenderbuffer', func: func4L3_ },
+    64: { name: 'debugPrint', func: func1 },
+    65: { name: 'hint', func: func2 },
+    66: { name: 'blendEquation', func: func1 },
+    67: { name: 'generateMipmap', func: func1 },
+    68: { name: 'uniformMatrix3fv', func: func3L0 },
+    69: { name: 'stencilMask', func: func1 },
+    70: { name: 'clearStencil', func: func1 },
+    71: { name: 'texSubImage2D', func: func9 },
+    72: { name: 'uniform3f', func: uniform3f },
+    73: { name: 'blendFuncSeparate', func: func4 },
+    74: { name: 'uniform2fv', func: uniform2fv },
+    75: { name: 'texParameterf', func: func3 },
+    76: { name: 'isContextLost', func: function() { assert(!ctx.isContextLost(), 'context lost which we cannot handle, we are async proxied WebGL') } },
+    77: { name: 'blendEquationSeparate', func: func2 },
+    78: { name: 'stencilFuncSeparate', func: func4 },
+    79: { name: 'stencilOpSeparate', func: func4 },
+    80: { name: 'drawBuffersWEBGL', func: func1 },
+    81: { name: 'uniform1iv', func: uniform1iv },
+    82: { name: 'uniform1fv', func: uniform1fv },
   };
 
-  if (process['argv'].length > 1) {
-    Module['thisProgram'] = process['argv'][1].replace(/\\/g, '/');
+  function renderCommands(buf) {
+    ctx = Module.ctx;
+    i = 0;
+    buffer = buf;
+    var len = buffer.length;
+    //dump('issuing commands, buffer len: ' + len + '\n');
+    while (i < len) {
+      var info = calls[buffer[i++]];
+      var name = info.name;
+      info.func(name);
+      //var err;
+      //while ((err = ctx.getError()) !== ctx.NO_ERROR) {
+      //  dump('warning: GL error ' + err + ', after ' + [command, numArgs] + '\n');
+      //}
+      assert(i <= len);
+    }
   }
 
-  Module['arguments'] = process['argv'].slice(2);
+  var commandBuffers = [];
 
-  if (typeof module !== 'undefined') {
-    module['exports'] = Module;
+  function renderAllCommands() {
+    // we can skip parts of the frames before the last, as we just need their side effects
+    skippable = true;
+    for (var i = 0; i < commandBuffers.length-1; i++) {
+      renderCommands(commandBuffers[i]);
+    }
+    skippable = false;
+    renderCommands(commandBuffers[commandBuffers.length-1]);
+    commandBuffers.length = 0;
   }
 
-  process['on']('uncaughtException', function(ex) {
-    // suppress ExitStatus exceptions from showing an error
-    if (!(ex instanceof ExitStatus)) {
-      throw ex;
+  this.onmessage = function(msg) {
+    //dump('client GL got ' + JSON.stringify(msg) + '\n');
+    switch(msg.op) {
+      case 'render': {
+        if (commandBuffers.length === 0) {
+          // requestion a new frame, we will clear the buffers after rendering them
+          window.requestAnimationFrame(renderAllCommands);
+        }
+        commandBuffers.push(msg.commandBuffer);
+        break;
+      }
+      default: throw 'weird gl onmessage ' + JSON.stringify(msg);
+    }
+  };
+}
+
+WebGLClient.prefetch = function() {
+  // Create a fake temporary GL context
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('webgl-experimental') || canvas.getContext('webgl');
+  if (!ctx) {
+    // If we have no webGL support, we still notify that prefetching is done, as the app blocks on that
+    worker.postMessage({ target: 'gl', op: 'setPrefetched', preMain: true });
+    return;
+  } 
+
+  // Fetch the parameters and proxy them
+  var parameters = {};
+  ['MAX_VERTEX_ATTRIBS', 'MAX_TEXTURE_IMAGE_UNITS', 'MAX_TEXTURE_SIZE', 'MAX_CUBE_MAP_TEXTURE_SIZE', 'MAX_VERTEX_UNIFORM_VECTORS', 'MAX_FRAGMENT_UNIFORM_VECTORS',
+   'MAX_VARYING_VECTORS', 'MAX_COMBINED_TEXTURE_IMAGE_UNITS', 'MAX_VERTEX_TEXTURE_IMAGE_UNITS', 'VENDOR', 'RENDERER', 'VERSION', 'SHADING_LANGUAGE_VERSION',
+   'COMPRESSED_TEXTURE_FORMATS', 'RED_BITS', 'GREEN_BITS', 'BLUE_BITS', 'ALPHA_BITS', 'DEPTH_BITS', 'STENCIL_BITS', 'MAX_RENDERBUFFER_SIZE'].forEach(function(name) {
+    var id = ctx[name];
+    parameters[id] = ctx.getParameter(id);
+  });
+  // Try to enable some extensions, so we can access their parameters
+  [{ extName: 'EXT_texture_filter_anisotropic', paramName: 'MAX_TEXTURE_MAX_ANISOTROPY_EXT' },
+   { extName: 'WEBGL_draw_buffers', paramName: 'MAX_COLOR_ATTACHMENTS_WEBGL' }].forEach(function(pair) {
+    var ext = ctx.getExtension(pair.extName);
+    if (ext) {
+      var id = ext[pair.paramName];
+      parameters[id] = ctx.getParameter(id);
     }
   });
-  // Currently node will swallow unhandled rejections, but this behavior is
-  // deprecated, and in the future it will exit with error status.
-  process['on']('unhandledRejection', abort);
+  // Fetch shader precisions
+  var precisions = {};
+  ['FRAGMENT_SHADER', 'VERTEX_SHADER'].forEach(function(shaderType) {
+    shaderType = ctx[shaderType];
+    precisions[shaderType] = {};
+    ['LOW_FLOAT', 'MEDIUM_FLOAT', 'HIGH_FLOAT', 'LOW_INT', 'MEDIUM_INT', 'HIGH_INT'].forEach(function(precisionType) {
+      precisionType = ctx[precisionType];
+      var info = ctx.getShaderPrecisionFormat(shaderType, precisionType);
+      precisions[shaderType][precisionType] = info ? { rangeMin: info.rangeMin, rangeMax: info.rangeMax, precision: info.precision } : info;
+    });
+  });
 
-  Module['quit'] = function(status) {
-    process['exit'](status);
-  };
-
-  Module['inspect'] = function () { return '[Emscripten Module object]'; };
-} else
-if (ENVIRONMENT_IS_SHELL) {
-
-
-  if (typeof read != 'undefined') {
-    Module['read'] = function shell_read(f) {
-      return read(f);
-    };
-  }
-
-  Module['readBinary'] = function readBinary(f) {
-    var data;
-    if (typeof readbuffer === 'function') {
-      return new Uint8Array(readbuffer(f));
-    }
-    data = read(f, 'binary');
-    assert(typeof data === 'object');
-    return data;
-  };
-
-  if (typeof scriptArgs != 'undefined') {
-    Module['arguments'] = scriptArgs;
-  } else if (typeof arguments != 'undefined') {
-    Module['arguments'] = arguments;
-  }
-
-  if (typeof quit === 'function') {
-    Module['quit'] = function(status) {
-      quit(status);
-    }
-  }
-} else
-if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
-  if (ENVIRONMENT_IS_WORKER) { // Check worker, not web, since window could be polyfilled
-    scriptDirectory = self.location.href;
-  } else if (document.currentScript) { // web
-    scriptDirectory = document.currentScript.src;
-  }
-  // blob urls look like blob:http://site.com/etc/etc and we cannot infer anything from them.
-  // otherwise, slice off the final part of the url to find the script directory.
-  // if scriptDirectory does not contain a slash, lastIndexOf will return -1,
-  // and scriptDirectory will correctly be replaced with an empty string.
-  if (scriptDirectory.indexOf('blob:') !== 0) {
-    scriptDirectory = scriptDirectory.substr(0, scriptDirectory.lastIndexOf('/')+1);
-  } else {
-    scriptDirectory = '';
-  }
+  worker.postMessage({ target: 'gl', op: 'setPrefetched', parameters: parameters, extensions: ctx.getSupportedExtensions(), precisions: precisions, preMain: true });
+};
 
 
-  Module['read'] = function shell_read(url) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', url, false);
-      xhr.send(null);
-      return xhr.responseText;
-  };
-
-  if (ENVIRONMENT_IS_WORKER) {
-    Module['readBinary'] = function readBinary(url) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, false);
-        xhr.responseType = 'arraybuffer';
-        xhr.send(null);
-        return new Uint8Array(xhr.response);
-    };
-  }
-
-  Module['readAsync'] = function readAsync(url, onload, onerror) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.responseType = 'arraybuffer';
-    xhr.onload = function xhr_onload() {
-      if (xhr.status == 200 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
-        onload(xhr.response);
-        return;
-      }
-      onerror();
-    };
-    xhr.onerror = onerror;
-    xhr.send(null);
-  };
-
-  Module['setWindowTitle'] = function(title) { document.title = title };
-} else
-{
-}
-
-// Set up the out() and err() hooks, which are how we can print to stdout or
-// stderr, respectively.
-// If the user provided Module.print or printErr, use that. Otherwise,
-// console.log is checked first, as 'print' on the web will open a print dialogue
-// printErr is preferable to console.warn (works better in shells)
-// bind(console) is necessary to fix IE/Edge closed dev tools panel behavior.
-var out = Module['print'] || (typeof console !== 'undefined' ? console.log.bind(console) : (typeof print !== 'undefined' ? print : null));
-var err = Module['printErr'] || (typeof printErr !== 'undefined' ? printErr : ((typeof console !== 'undefined' && console.warn.bind(console)) || out));
-
-// Merge back in the overrides
-for (key in moduleOverrides) {
-  if (moduleOverrides.hasOwnProperty(key)) {
-    Module[key] = moduleOverrides[key];
-  }
-}
-// Free the object hierarchy contained in the overrides, this lets the GC
-// reclaim data used e.g. in memoryInitializerRequest, which is a large typed array.
-moduleOverrides = undefined;
-
-// perform assertions in shell.js after we set up out() and err(), as otherwise if an assertion fails it cannot print the message
-
-
-
-// Copyright 2017 The Emscripten Authors.  All rights reserved.
+// Copyright 2013 The Emscripten Authors.  All rights reserved.
 // Emscripten is available under two separate licenses, the MIT license and the
 // University of Illinois/NCSA Open Source License.  Both these licenses can be
 // found in the LICENSE file.
 
-// {{PREAMBLE_ADDITIONS}}
+// proxy to/from worker
 
-var STACK_ALIGN = 16;
-
-
-function staticAlloc(size) {
-  var ret = STATICTOP;
-  STATICTOP = (STATICTOP + size + 15) & -16;
-  return ret;
-}
-
-function dynamicAlloc(size) {
-  var ret = HEAP32[DYNAMICTOP_PTR>>2];
-  var end = (ret + size + 15) & -16;
-  HEAP32[DYNAMICTOP_PTR>>2] = end;
-  if (end >= TOTAL_MEMORY) {
-    var success = enlargeMemory();
-    if (!success) {
-      HEAP32[DYNAMICTOP_PTR>>2] = ret;
-      return 0;
-    }
-  }
-  return ret;
-}
-
-function alignMemory(size, factor) {
-  if (!factor) factor = STACK_ALIGN; // stack alignment (16-byte) by default
-  var ret = size = Math.ceil(size / factor) * factor;
-  return ret;
-}
-
-function getNativeTypeSize(type) {
-  switch (type) {
-    case 'i1': case 'i8': return 1;
-    case 'i16': return 2;
-    case 'i32': return 4;
-    case 'i64': return 8;
-    case 'float': return 4;
-    case 'double': return 8;
-    default: {
-      if (type[type.length-1] === '*') {
-        return 4; // A pointer
-      } else if (type[0] === 'i') {
-        var bits = parseInt(type.substr(1));
-        assert(bits % 8 === 0);
-        return bits / 8;
-      } else {
-        return 0;
-      }
-    }
-  }
-}
-
-function warnOnce(text) {
-  if (!warnOnce.shown) warnOnce.shown = {};
-  if (!warnOnce.shown[text]) {
-    warnOnce.shown[text] = 1;
-    err(text);
-  }
-}
-
-var asm2wasmImports = { // special asm2wasm imports
-    "f64-rem": function(x, y) {
-        return x % y;
+if (typeof Module === 'undefined') {
+  console.warn('no Module object defined - cannot proxy canvas rendering and input events, etc.');
+  Module = {
+    print: function(x) {
+      console.log(x);
     },
-    "debugger": function() {
-        debugger;
-    }
-};
-
-
-
-var jsCallStartIndex = 1;
-var functionPointers = new Array(0);
-
-// 'sig' parameter is only used on LLVM wasm backend
-function addFunction(func, sig) {
-  var base = 0;
-  for (var i = base; i < base + 0; i++) {
-    if (!functionPointers[i]) {
-      functionPointers[i] = func;
-      return jsCallStartIndex + i;
-    }
-  }
-  throw 'Finished up all reserved function pointers. Use a higher value for RESERVED_FUNCTION_POINTERS.';
+    printErr: function(x) {
+      console.log(x);
+    },
+    canvas: {
+      addEventListener: function() {},
+      getBoundingClientRect: function() { return { bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0 } },
+    },
+  };
 }
 
-function removeFunction(index) {
-  functionPointers[index-jsCallStartIndex] = null;
-}
+// utils
 
-var funcWrappers = {};
-
-function getFuncWrapper(func, sig) {
-  if (!func) return; // on null pointer, return undefined
-  assert(sig);
-  if (!funcWrappers[sig]) {
-    funcWrappers[sig] = {};
-  }
-  var sigCache = funcWrappers[sig];
-  if (!sigCache[func]) {
-    // optimize away arguments usage in common cases
-    if (sig.length === 1) {
-      sigCache[func] = function dynCall_wrapper() {
-        return dynCall(sig, func);
-      };
-    } else if (sig.length === 2) {
-      sigCache[func] = function dynCall_wrapper(arg) {
-        return dynCall(sig, func, [arg]);
-      };
-    } else {
-      // general case
-      sigCache[func] = function dynCall_wrapper() {
-        return dynCall(sig, func, Array.prototype.slice.call(arguments));
-      };
-    }
-  }
-  return sigCache[func];
-}
-
-
-function makeBigInt(low, high, unsigned) {
-  return unsigned ? ((+((low>>>0)))+((+((high>>>0)))*4294967296.0)) : ((+((low>>>0)))+((+((high|0)))*4294967296.0));
-}
-
-function dynCall(sig, ptr, args) {
-  if (args && args.length) {
-    return Module['dynCall_' + sig].apply(null, [ptr].concat(args));
-  } else {
-    return Module['dynCall_' + sig].call(null, ptr);
-  }
-}
-
-var tempRet0 = 0;
-
-var setTempRet0 = function(value) {
-  tempRet0 = value;
-}
-
-var getTempRet0 = function() {
-  return tempRet0;
-}
-
-
-var Runtime = {
-  // FIXME backwards compatibility layer for ports. Support some Runtime.*
-  //       for now, fix it there, then remove it from here. That way we
-  //       can minimize any period of breakage.
-  dynCall: dynCall, // for SDL2 port
-};
-
-// The address globals begin at. Very low in memory, for code size and optimization opportunities.
-// Above 0 is static memory, starting with globals.
-// Then the stack.
-// Then 'dynamic' memory for sbrk.
-var GLOBAL_BASE = 1024;
-
-
-// === Preamble library stuff ===
-
-// Documentation for the public APIs defined in this file must be updated in:
-//    site/source/docs/api_reference/preamble.js.rst
-// A prebuilt local version of the documentation is available at:
-//    site/build/text/docs/api_reference/preamble.js.txt
-// You can also build docs locally as HTML or other formats in site/
-// An online HTML version (which may be of a different version of Emscripten)
-//    is up at http://kripken.github.io/emscripten-site/docs/api_reference/preamble.js.html
-
-
-
-//========================================
-// Runtime essentials
-//========================================
-
-// whether we are quitting the application. no code should run after this.
-// set in exit() and abort()
-var ABORT = false;
-
-// set by exit() and abort().  Passed to 'onExit' handler.
-// NOTE: This is also used as the process return code code in shell environments
-// but only when noExitRuntime is false.
-var EXITSTATUS = 0;
-
-/** @type {function(*, string=)} */
-function assert(condition, text) {
-  if (!condition) {
-    abort('Assertion failed: ' + text);
-  }
-}
-
-var globalScope = this;
-
-// Returns the C function with a specified identifier (for C++, you need to do manual name mangling)
-function getCFunc(ident) {
-  var func = Module['_' + ident]; // closure exported function
-  assert(func, 'Cannot call unknown function ' + ident + ', make sure it is exported');
-  return func;
-}
-
-var JSfuncs = {
-  // Helpers for cwrap -- it can't refer to Runtime directly because it might
-  // be renamed by closure, instead it calls JSfuncs['stackSave'].body to find
-  // out what the minified function name is.
-  'stackSave': function() {
-    stackSave()
-  },
-  'stackRestore': function() {
-    stackRestore()
-  },
-  // type conversion from js to c
-  'arrayToC' : function(arr) {
-    var ret = stackAlloc(arr.length);
-    writeArrayToMemory(arr, ret);
-    return ret;
-  },
-  'stringToC' : function(str) {
-    var ret = 0;
-    if (str !== null && str !== undefined && str !== 0) { // null string
-      // at most 4 bytes per UTF-8 code point, +1 for the trailing '\0'
-      var len = (str.length << 2) + 1;
-      ret = stackAlloc(len);
-      stringToUTF8(str, ret, len);
-    }
-    return ret;
-  }
-};
-
-// For fast lookup of conversion functions
-var toC = {
-  'string': JSfuncs['stringToC'], 'array': JSfuncs['arrayToC']
-};
-
-
-// C calling interface.
-function ccall(ident, returnType, argTypes, args, opts) {
-  function convertReturnValue(ret) {
-    if (returnType === 'string') return Pointer_stringify(ret);
-    if (returnType === 'boolean') return Boolean(ret);
-    return ret;
-  }
-
-  var func = getCFunc(ident);
-  var cArgs = [];
-  var stack = 0;
-  if (args) {
-    for (var i = 0; i < args.length; i++) {
-      var converter = toC[argTypes[i]];
-      if (converter) {
-        if (stack === 0) stack = stackSave();
-        cArgs[i] = converter(args[i]);
-      } else {
-        cArgs[i] = args[i];
+function FPSTracker(text) {
+  var last = 0;
+  var mean = 0;
+  var counter = 0;
+  this.tick = function() {
+    var now = Date.now();
+    if (last > 0) {
+      var diff = now - last;
+      mean = 0.99*mean + 0.01*diff;
+      if (counter++ === 60) {
+        counter = 0;
+        dump(text + ' fps: ' + (1000/mean).toFixed(2) + '\n');
       }
     }
-  }
-  var ret = func.apply(null, cArgs);
-  ret = convertReturnValue(ret);
-  if (stack !== 0) stackRestore(stack);
-  return ret;
+    last = now;
+  };
 }
 
-function cwrap(ident, returnType, argTypes, opts) {
-  argTypes = argTypes || [];
-  // When the function takes numbers and returns a number, we can just return
-  // the original function
-  var numericArgs = argTypes.every(function(type){ return type === 'number'});
-  var numericRet = returnType !== 'string';
-  if (numericRet && numericArgs && !opts) {
-    return getCFunc(ident);
-  }
-  return function() {
-    return ccall(ident, returnType, argTypes, arguments, opts);
-  }
-}
-
-/** @type {function(number, number, string, boolean=)} */
-function setValue(ptr, value, type, noSafe) {
-  type = type || 'i8';
-  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
-    switch(type) {
-      case 'i1': HEAP8[((ptr)>>0)]=value; break;
-      case 'i8': HEAP8[((ptr)>>0)]=value; break;
-      case 'i16': HEAP16[((ptr)>>1)]=value; break;
-      case 'i32': HEAP32[((ptr)>>2)]=value; break;
-      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[((ptr)>>2)]=tempI64[0],HEAP32[(((ptr)+(4))>>2)]=tempI64[1]); break;
-      case 'float': HEAPF32[((ptr)>>2)]=value; break;
-      case 'double': HEAPF64[((ptr)>>3)]=value; break;
-      default: abort('invalid type for setValue: ' + type);
+/*
+function GenericTracker(text) {
+  var mean = 0;
+  var counter = 0;
+  this.tick = function(value) {
+    mean = 0.99*mean + 0.01*value;
+    if (counter++ === 60) {
+      counter = 0;
+      dump(text + ': ' + (mean).toFixed(2) + '\n');
     }
+  };
 }
+*/
 
-/** @type {function(number, string, boolean=)} */
-function getValue(ptr, type, noSafe) {
-  type = type || 'i8';
-  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
-    switch(type) {
-      case 'i1': return HEAP8[((ptr)>>0)];
-      case 'i8': return HEAP8[((ptr)>>0)];
-      case 'i16': return HEAP16[((ptr)>>1)];
-      case 'i32': return HEAP32[((ptr)>>2)];
-      case 'i64': return HEAP32[((ptr)>>2)];
-      case 'float': return HEAPF32[((ptr)>>2)];
-      case 'double': return HEAPF64[((ptr)>>3)];
-      default: abort('invalid type for getValue: ' + type);
-    }
-  return null;
-}
+// render
 
-var ALLOC_NORMAL = 0; // Tries to use _malloc()
-var ALLOC_STACK = 1; // Lives for the duration of the current function call
-var ALLOC_STATIC = 2; // Cannot be freed
-var ALLOC_DYNAMIC = 3; // Cannot be freed except through sbrk
-var ALLOC_NONE = 4; // Do not allocate
+var renderFrameData = null;
 
-// allocate(): This is for internal use. You can use it yourself as well, but the interface
-//             is a little tricky (see docs right below). The reason is that it is optimized
-//             for multiple syntaxes to save space in generated code. So you should
-//             normally not use allocate(), and instead allocate memory using _malloc(),
-//             initialize it with setValue(), and so forth.
-// @slab: An array of data, or a number. If a number, then the size of the block to allocate,
-//        in *bytes* (note that this is sometimes confusing: the next parameter does not
-//        affect this!)
-// @types: Either an array of types, one for each byte (or 0 if no type at that position),
-//         or a single type which is used for the entire block. This only matters if there
-//         is initial data - if @slab is a number, then this does not matter at all and is
-//         ignored.
-// @allocator: How to allocate memory, see ALLOC_*
-/** @type {function((TypedArray|Array<number>|number), string, number, number=)} */
-function allocate(slab, types, allocator, ptr) {
-  var zeroinit, size;
-  if (typeof slab === 'number') {
-    zeroinit = true;
-    size = slab;
+function renderFrame() {
+  var dst = Module.canvasData.data;
+  if (dst.set) {
+    dst.set(renderFrameData);
   } else {
-    zeroinit = false;
-    size = slab.length;
-  }
-
-  var singleType = typeof types === 'string' ? types : null;
-
-  var ret;
-  if (allocator == ALLOC_NONE) {
-    ret = ptr;
-  } else {
-    ret = [typeof _malloc === 'function' ? _malloc : staticAlloc, stackAlloc, staticAlloc, dynamicAlloc][allocator === undefined ? ALLOC_STATIC : allocator](Math.max(size, singleType ? 1 : types.length));
-  }
-
-  if (zeroinit) {
-    var stop;
-    ptr = ret;
-    assert((ret & 3) == 0);
-    stop = ret + (size & ~3);
-    for (; ptr < stop; ptr += 4) {
-      HEAP32[((ptr)>>2)]=0;
-    }
-    stop = ret + size;
-    while (ptr < stop) {
-      HEAP8[((ptr++)>>0)]=0;
-    }
-    return ret;
-  }
-
-  if (singleType === 'i8') {
-    if (slab.subarray || slab.slice) {
-      HEAPU8.set(/** @type {!Uint8Array} */ (slab), ret);
-    } else {
-      HEAPU8.set(new Uint8Array(slab), ret);
-    }
-    return ret;
-  }
-
-  var i = 0, type, typeSize, previousType;
-  while (i < size) {
-    var curr = slab[i];
-
-    type = singleType || types[i];
-    if (type === 0) {
-      i++;
-      continue;
-    }
-
-    if (type == 'i64') type = 'i32'; // special case: we have one i32 here, and one i32 later
-
-    setValue(ret+i, curr, type);
-
-    // no need to look up size unless type changes, so cache it
-    if (previousType !== type) {
-      typeSize = getNativeTypeSize(type);
-      previousType = type;
-    }
-    i += typeSize;
-  }
-
-  return ret;
-}
-
-// Allocate memory during any stage of startup - static memory early on, dynamic memory later, malloc when ready
-function getMemory(size) {
-  if (!staticSealed) return staticAlloc(size);
-  if (!runtimeInitialized) return dynamicAlloc(size);
-  return _malloc(size);
-}
-
-/** @type {function(number, number=)} */
-function Pointer_stringify(ptr, length) {
-  if (length === 0 || !ptr) return '';
-  // Find the length, and check for UTF while doing so
-  var hasUtf = 0;
-  var t;
-  var i = 0;
-  while (1) {
-    t = HEAPU8[(((ptr)+(i))>>0)];
-    hasUtf |= t;
-    if (t == 0 && !length) break;
-    i++;
-    if (length && i == length) break;
-  }
-  if (!length) length = i;
-
-  var ret = '';
-
-  if (hasUtf < 128) {
-    var MAX_CHUNK = 1024; // split up into chunks, because .apply on a huge string can overflow the stack
-    var curr;
-    while (length > 0) {
-      curr = String.fromCharCode.apply(String, HEAPU8.subarray(ptr, ptr + Math.min(length, MAX_CHUNK)));
-      ret = ret ? ret + curr : curr;
-      ptr += MAX_CHUNK;
-      length -= MAX_CHUNK;
-    }
-    return ret;
-  }
-  return UTF8ToString(ptr);
-}
-
-// Given a pointer 'ptr' to a null-terminated ASCII-encoded string in the emscripten HEAP, returns
-// a copy of that string as a Javascript String object.
-
-function AsciiToString(ptr) {
-  var str = '';
-  while (1) {
-    var ch = HEAP8[((ptr++)>>0)];
-    if (!ch) return str;
-    str += String.fromCharCode(ch);
-  }
-}
-
-// Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
-// null-terminated and encoded in ASCII form. The copy will require at most str.length+1 bytes of space in the HEAP.
-
-function stringToAscii(str, outPtr) {
-  return writeAsciiToMemory(str, outPtr, false);
-}
-
-// Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the given array that contains uint8 values, returns
-// a copy of that string as a Javascript String object.
-
-var UTF8Decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf8') : undefined;
-function UTF8ArrayToString(u8Array, idx) {
-  var endPtr = idx;
-  // TextDecoder needs to know the byte length in advance, it doesn't stop on null terminator by itself.
-  // Also, use the length info to avoid running tiny strings through TextDecoder, since .subarray() allocates garbage.
-  while (u8Array[endPtr]) ++endPtr;
-
-  if (endPtr - idx > 16 && u8Array.subarray && UTF8Decoder) {
-    return UTF8Decoder.decode(u8Array.subarray(idx, endPtr));
-  } else {
-    var u0, u1, u2, u3, u4, u5;
-
-    var str = '';
-    while (1) {
-      // For UTF8 byte structure, see:
-      // http://en.wikipedia.org/wiki/UTF-8#Description
-      // https://www.ietf.org/rfc/rfc2279.txt
-      // https://tools.ietf.org/html/rfc3629
-      u0 = u8Array[idx++];
-      if (!u0) return str;
-      if (!(u0 & 0x80)) { str += String.fromCharCode(u0); continue; }
-      u1 = u8Array[idx++] & 63;
-      if ((u0 & 0xE0) == 0xC0) { str += String.fromCharCode(((u0 & 31) << 6) | u1); continue; }
-      u2 = u8Array[idx++] & 63;
-      if ((u0 & 0xF0) == 0xE0) {
-        u0 = ((u0 & 15) << 12) | (u1 << 6) | u2;
-      } else {
-        u3 = u8Array[idx++] & 63;
-        if ((u0 & 0xF8) == 0xF0) {
-          u0 = ((u0 & 7) << 18) | (u1 << 12) | (u2 << 6) | u3;
-        } else {
-          u4 = u8Array[idx++] & 63;
-          if ((u0 & 0xFC) == 0xF8) {
-            u0 = ((u0 & 3) << 24) | (u1 << 18) | (u2 << 12) | (u3 << 6) | u4;
-          } else {
-            u5 = u8Array[idx++] & 63;
-            u0 = ((u0 & 1) << 30) | (u1 << 24) | (u2 << 18) | (u3 << 12) | (u4 << 6) | u5;
-          }
-        }
-      }
-      if (u0 < 0x10000) {
-        str += String.fromCharCode(u0);
-      } else {
-        var ch = u0 - 0x10000;
-        str += String.fromCharCode(0xD800 | (ch >> 10), 0xDC00 | (ch & 0x3FF));
-      }
+    for (var i = 0; i < renderFrameData.length; i++) {
+      dst[i] = renderFrameData[i];
     }
   }
+  Module.ctx.putImageData(Module.canvasData, 0, 0);
+  renderFrameData = null;
 }
 
-// Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the emscripten HEAP, returns
-// a copy of that string as a Javascript String object.
+window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                               window.webkitRequestAnimationFrame || window.msRequestAnimationFrame ||
+                               renderFrame;
 
-function UTF8ToString(ptr) {
-  return UTF8ArrayToString(HEAPU8,ptr);
-}
-
-// Copies the given Javascript String object 'str' to the given byte array at address 'outIdx',
-// encoded in UTF8 form and null-terminated. The copy will require at most str.length*4+1 bytes of space in the HEAP.
-// Use the function lengthBytesUTF8 to compute the exact number of bytes (excluding null terminator) that this function will write.
-// Parameters:
-//   str: the Javascript string to copy.
-//   outU8Array: the array to copy to. Each index in this array is assumed to be one 8-byte element.
-//   outIdx: The starting offset in the array to begin the copying.
-//   maxBytesToWrite: The maximum number of bytes this function can write to the array.
-//                    This count should include the null terminator,
-//                    i.e. if maxBytesToWrite=1, only the null terminator will be written and nothing else.
-//                    maxBytesToWrite=0 does not write any bytes to the output, not even the null terminator.
-// Returns the number of bytes written, EXCLUDING the null terminator.
-
-function stringToUTF8Array(str, outU8Array, outIdx, maxBytesToWrite) {
-  if (!(maxBytesToWrite > 0)) // Parameter maxBytesToWrite is not optional. Negative values, 0, null, undefined and false each don't write out any bytes.
-    return 0;
-
-  var startIdx = outIdx;
-  var endIdx = outIdx + maxBytesToWrite - 1; // -1 for string null terminator.
-  for (var i = 0; i < str.length; ++i) {
-    // Gotcha: charCodeAt returns a 16-bit word that is a UTF-16 encoded code unit, not a Unicode code point of the character! So decode UTF16->UTF32->UTF8.
-    // See http://unicode.org/faq/utf_bom.html#utf16-3
-    // For UTF8 byte structure, see http://en.wikipedia.org/wiki/UTF-8#Description and https://www.ietf.org/rfc/rfc2279.txt and https://tools.ietf.org/html/rfc3629
-    var u = str.charCodeAt(i); // possibly a lead surrogate
-    if (u >= 0xD800 && u <= 0xDFFF) {
-      var u1 = str.charCodeAt(++i);
-      u = 0x10000 + ((u & 0x3FF) << 10) | (u1 & 0x3FF);
-    }
-    if (u <= 0x7F) {
-      if (outIdx >= endIdx) break;
-      outU8Array[outIdx++] = u;
-    } else if (u <= 0x7FF) {
-      if (outIdx + 1 >= endIdx) break;
-      outU8Array[outIdx++] = 0xC0 | (u >> 6);
-      outU8Array[outIdx++] = 0x80 | (u & 63);
-    } else if (u <= 0xFFFF) {
-      if (outIdx + 2 >= endIdx) break;
-      outU8Array[outIdx++] = 0xE0 | (u >> 12);
-      outU8Array[outIdx++] = 0x80 | ((u >> 6) & 63);
-      outU8Array[outIdx++] = 0x80 | (u & 63);
-    } else if (u <= 0x1FFFFF) {
-      if (outIdx + 3 >= endIdx) break;
-      outU8Array[outIdx++] = 0xF0 | (u >> 18);
-      outU8Array[outIdx++] = 0x80 | ((u >> 12) & 63);
-      outU8Array[outIdx++] = 0x80 | ((u >> 6) & 63);
-      outU8Array[outIdx++] = 0x80 | (u & 63);
-    } else if (u <= 0x3FFFFFF) {
-      if (outIdx + 4 >= endIdx) break;
-      outU8Array[outIdx++] = 0xF8 | (u >> 24);
-      outU8Array[outIdx++] = 0x80 | ((u >> 18) & 63);
-      outU8Array[outIdx++] = 0x80 | ((u >> 12) & 63);
-      outU8Array[outIdx++] = 0x80 | ((u >> 6) & 63);
-      outU8Array[outIdx++] = 0x80 | (u & 63);
-    } else {
-      if (outIdx + 5 >= endIdx) break;
-      outU8Array[outIdx++] = 0xFC | (u >> 30);
-      outU8Array[outIdx++] = 0x80 | ((u >> 24) & 63);
-      outU8Array[outIdx++] = 0x80 | ((u >> 18) & 63);
-      outU8Array[outIdx++] = 0x80 | ((u >> 12) & 63);
-      outU8Array[outIdx++] = 0x80 | ((u >> 6) & 63);
-      outU8Array[outIdx++] = 0x80 | (u & 63);
-    }
-  }
-  // Null-terminate the pointer to the buffer.
-  outU8Array[outIdx] = 0;
-  return outIdx - startIdx;
-}
-
-// Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
-// null-terminated and encoded in UTF8 form. The copy will require at most str.length*4+1 bytes of space in the HEAP.
-// Use the function lengthBytesUTF8 to compute the exact number of bytes (excluding null terminator) that this function will write.
-// Returns the number of bytes written, EXCLUDING the null terminator.
-
-function stringToUTF8(str, outPtr, maxBytesToWrite) {
-  return stringToUTF8Array(str, HEAPU8,outPtr, maxBytesToWrite);
-}
-
-// Returns the number of bytes the given Javascript string takes if encoded as a UTF8 byte array, EXCLUDING the null terminator byte.
-
-function lengthBytesUTF8(str) {
-  var len = 0;
-  for (var i = 0; i < str.length; ++i) {
-    // Gotcha: charCodeAt returns a 16-bit word that is a UTF-16 encoded code unit, not a Unicode code point of the character! So decode UTF16->UTF32->UTF8.
-    // See http://unicode.org/faq/utf_bom.html#utf16-3
-    var u = str.charCodeAt(i); // possibly a lead surrogate
-    if (u >= 0xD800 && u <= 0xDFFF) u = 0x10000 + ((u & 0x3FF) << 10) | (str.charCodeAt(++i) & 0x3FF);
-    if (u <= 0x7F) {
-      ++len;
-    } else if (u <= 0x7FF) {
-      len += 2;
-    } else if (u <= 0xFFFF) {
-      len += 3;
-    } else if (u <= 0x1FFFFF) {
-      len += 4;
-    } else if (u <= 0x3FFFFFF) {
-      len += 5;
-    } else {
-      len += 6;
-    }
-  }
-  return len;
-}
-
-// Given a pointer 'ptr' to a null-terminated UTF16LE-encoded string in the emscripten HEAP, returns
-// a copy of that string as a Javascript String object.
-
-var UTF16Decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-16le') : undefined;
-function UTF16ToString(ptr) {
-  var endPtr = ptr;
-  // TextDecoder needs to know the byte length in advance, it doesn't stop on null terminator by itself.
-  // Also, use the length info to avoid running tiny strings through TextDecoder, since .subarray() allocates garbage.
-  var idx = endPtr >> 1;
-  while (HEAP16[idx]) ++idx;
-  endPtr = idx << 1;
-
-  if (endPtr - ptr > 32 && UTF16Decoder) {
-    return UTF16Decoder.decode(HEAPU8.subarray(ptr, endPtr));
-  } else {
-    var i = 0;
-
-    var str = '';
-    while (1) {
-      var codeUnit = HEAP16[(((ptr)+(i*2))>>1)];
-      if (codeUnit == 0) return str;
-      ++i;
-      // fromCharCode constructs a character from a UTF-16 code unit, so we can pass the UTF16 string right through.
-      str += String.fromCharCode(codeUnit);
-    }
-  }
-}
-
-// Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
-// null-terminated and encoded in UTF16 form. The copy will require at most str.length*4+2 bytes of space in the HEAP.
-// Use the function lengthBytesUTF16() to compute the exact number of bytes (excluding null terminator) that this function will write.
-// Parameters:
-//   str: the Javascript string to copy.
-//   outPtr: Byte address in Emscripten HEAP where to write the string to.
-//   maxBytesToWrite: The maximum number of bytes this function can write to the array. This count should include the null
-//                    terminator, i.e. if maxBytesToWrite=2, only the null terminator will be written and nothing else.
-//                    maxBytesToWrite<2 does not write any bytes to the output, not even the null terminator.
-// Returns the number of bytes written, EXCLUDING the null terminator.
-
-function stringToUTF16(str, outPtr, maxBytesToWrite) {
-  // Backwards compatibility: if max bytes is not specified, assume unsafe unbounded write is allowed.
-  if (maxBytesToWrite === undefined) {
-    maxBytesToWrite = 0x7FFFFFFF;
-  }
-  if (maxBytesToWrite < 2) return 0;
-  maxBytesToWrite -= 2; // Null terminator.
-  var startPtr = outPtr;
-  var numCharsToWrite = (maxBytesToWrite < str.length*2) ? (maxBytesToWrite / 2) : str.length;
-  for (var i = 0; i < numCharsToWrite; ++i) {
-    // charCodeAt returns a UTF-16 encoded code unit, so it can be directly written to the HEAP.
-    var codeUnit = str.charCodeAt(i); // possibly a lead surrogate
-    HEAP16[((outPtr)>>1)]=codeUnit;
-    outPtr += 2;
-  }
-  // Null-terminate the pointer to the HEAP.
-  HEAP16[((outPtr)>>1)]=0;
-  return outPtr - startPtr;
-}
-
-// Returns the number of bytes the given Javascript string takes if encoded as a UTF16 byte array, EXCLUDING the null terminator byte.
-
-function lengthBytesUTF16(str) {
-  return str.length*2;
-}
-
-function UTF32ToString(ptr) {
-  var i = 0;
-
-  var str = '';
-  while (1) {
-    var utf32 = HEAP32[(((ptr)+(i*4))>>2)];
-    if (utf32 == 0)
-      return str;
-    ++i;
-    // Gotcha: fromCharCode constructs a character from a UTF-16 encoded code (pair), not from a Unicode code point! So encode the code point to UTF-16 for constructing.
-    // See http://unicode.org/faq/utf_bom.html#utf16-3
-    if (utf32 >= 0x10000) {
-      var ch = utf32 - 0x10000;
-      str += String.fromCharCode(0xD800 | (ch >> 10), 0xDC00 | (ch & 0x3FF));
-    } else {
-      str += String.fromCharCode(utf32);
-    }
-  }
-}
-
-// Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
-// null-terminated and encoded in UTF32 form. The copy will require at most str.length*4+4 bytes of space in the HEAP.
-// Use the function lengthBytesUTF32() to compute the exact number of bytes (excluding null terminator) that this function will write.
-// Parameters:
-//   str: the Javascript string to copy.
-//   outPtr: Byte address in Emscripten HEAP where to write the string to.
-//   maxBytesToWrite: The maximum number of bytes this function can write to the array. This count should include the null
-//                    terminator, i.e. if maxBytesToWrite=4, only the null terminator will be written and nothing else.
-//                    maxBytesToWrite<4 does not write any bytes to the output, not even the null terminator.
-// Returns the number of bytes written, EXCLUDING the null terminator.
-
-function stringToUTF32(str, outPtr, maxBytesToWrite) {
-  // Backwards compatibility: if max bytes is not specified, assume unsafe unbounded write is allowed.
-  if (maxBytesToWrite === undefined) {
-    maxBytesToWrite = 0x7FFFFFFF;
-  }
-  if (maxBytesToWrite < 4) return 0;
-  var startPtr = outPtr;
-  var endPtr = startPtr + maxBytesToWrite - 4;
-  for (var i = 0; i < str.length; ++i) {
-    // Gotcha: charCodeAt returns a 16-bit word that is a UTF-16 encoded code unit, not a Unicode code point of the character! We must decode the string to UTF-32 to the heap.
-    // See http://unicode.org/faq/utf_bom.html#utf16-3
-    var codeUnit = str.charCodeAt(i); // possibly a lead surrogate
-    if (codeUnit >= 0xD800 && codeUnit <= 0xDFFF) {
-      var trailSurrogate = str.charCodeAt(++i);
-      codeUnit = 0x10000 + ((codeUnit & 0x3FF) << 10) | (trailSurrogate & 0x3FF);
-    }
-    HEAP32[((outPtr)>>2)]=codeUnit;
-    outPtr += 4;
-    if (outPtr + 4 > endPtr) break;
-  }
-  // Null-terminate the pointer to the HEAP.
-  HEAP32[((outPtr)>>2)]=0;
-  return outPtr - startPtr;
-}
-
-// Returns the number of bytes the given Javascript string takes if encoded as a UTF16 byte array, EXCLUDING the null terminator byte.
-
-function lengthBytesUTF32(str) {
-  var len = 0;
-  for (var i = 0; i < str.length; ++i) {
-    // Gotcha: charCodeAt returns a 16-bit word that is a UTF-16 encoded code unit, not a Unicode code point of the character! We must decode the string to UTF-32 to the heap.
-    // See http://unicode.org/faq/utf_bom.html#utf16-3
-    var codeUnit = str.charCodeAt(i);
-    if (codeUnit >= 0xD800 && codeUnit <= 0xDFFF) ++i; // possibly a lead surrogate, so skip over the tail surrogate.
-    len += 4;
-  }
-
-  return len;
-}
-
-// Allocate heap space for a JS string, and write it there.
-// It is the responsibility of the caller to free() that memory.
-function allocateUTF8(str) {
-  var size = lengthBytesUTF8(str) + 1;
-  var ret = _malloc(size);
-  if (ret) stringToUTF8Array(str, HEAP8, ret, size);
-  return ret;
-}
-
-// Allocate stack space for a JS string, and write it there.
-function allocateUTF8OnStack(str) {
-  var size = lengthBytesUTF8(str) + 1;
-  var ret = stackAlloc(size);
-  stringToUTF8Array(str, HEAP8, ret, size);
-  return ret;
-}
-
-function demangle(func) {
-  return func;
-}
-
-function demangleAll(text) {
-  var regex =
-    /__Z[\w\d_]+/g;
-  return text.replace(regex,
-    function(x) {
-      var y = demangle(x);
-      return x === y ? x : (y + ' [' + x + ']');
+/*
+(function() {
+  var trueRAF = window.requestAnimationFrame;
+  var tracker = new FPSTracker('client');
+  window.requestAnimationFrame = function(func) {
+    trueRAF(function() {
+      tracker.tick();
+      func();
     });
-}
-
-function jsStackTrace() {
-  var err = new Error();
-  if (!err.stack) {
-    // IE10+ special cases: It does have callstack info, but it is only populated if an Error object is thrown,
-    // so try that as a special-case.
-    try {
-      throw new Error(0);
-    } catch(e) {
-      err = e;
-    }
-    if (!err.stack) {
-      return '(no stack trace available)';
-    }
   }
-  return err.stack.toString();
-}
+})();
+*/
 
-function stackTrace() {
-  var js = jsStackTrace();
-  if (Module['extraStackTrace']) js += '\n' + Module['extraStackTrace']();
-  return demangleAll(js);
-}
+// end render
 
-// Memory management
+// IDBStore
 
-var PAGE_SIZE = 16384;
-var WASM_PAGE_SIZE = 65536;
-var ASMJS_PAGE_SIZE = 16777216;
-var MIN_TOTAL_MEMORY = 16777216;
-
-function alignUp(x, multiple) {
-  if (x % multiple > 0) {
-    x += multiple - (x % multiple);
-  }
-  return x;
-}
-
-var HEAP,
-/** @type {ArrayBuffer} */
-  buffer,
-/** @type {Int8Array} */
-  HEAP8,
-/** @type {Uint8Array} */
-  HEAPU8,
-/** @type {Int16Array} */
-  HEAP16,
-/** @type {Uint16Array} */
-  HEAPU16,
-/** @type {Int32Array} */
-  HEAP32,
-/** @type {Uint32Array} */
-  HEAPU32,
-/** @type {Float32Array} */
-  HEAPF32,
-/** @type {Float64Array} */
-  HEAPF64;
-
-function updateGlobalBuffer(buf) {
-  Module['buffer'] = buffer = buf;
-}
-
-function updateGlobalBufferViews() {
-  Module['HEAP8'] = HEAP8 = new Int8Array(buffer);
-  Module['HEAP16'] = HEAP16 = new Int16Array(buffer);
-  Module['HEAP32'] = HEAP32 = new Int32Array(buffer);
-  Module['HEAPU8'] = HEAPU8 = new Uint8Array(buffer);
-  Module['HEAPU16'] = HEAPU16 = new Uint16Array(buffer);
-  Module['HEAPU32'] = HEAPU32 = new Uint32Array(buffer);
-  Module['HEAPF32'] = HEAPF32 = new Float32Array(buffer);
-  Module['HEAPF64'] = HEAPF64 = new Float64Array(buffer);
-}
-
-var STATIC_BASE, STATICTOP, staticSealed; // static area
-var STACK_BASE, STACKTOP, STACK_MAX; // stack area
-var DYNAMIC_BASE, DYNAMICTOP_PTR; // dynamic area handled by sbrk
-
-  STATIC_BASE = STATICTOP = STACK_BASE = STACKTOP = STACK_MAX = DYNAMIC_BASE = DYNAMICTOP_PTR = 0;
-  staticSealed = false;
-
-
-
-
-function abortOnCannotGrowMemory() {
-  abort('Cannot enlarge memory arrays. Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ' + TOTAL_MEMORY + ', (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 ');
-}
-
-
-function enlargeMemory() {
-  abortOnCannotGrowMemory();
-}
-
-
-var TOTAL_STACK = Module['TOTAL_STACK'] || 5242880;
-var TOTAL_MEMORY = Module['TOTAL_MEMORY'] || 16777216;
-if (TOTAL_MEMORY < TOTAL_STACK) err('TOTAL_MEMORY should be larger than TOTAL_STACK, was ' + TOTAL_MEMORY + '! (TOTAL_STACK=' + TOTAL_STACK + ')');
-
-// Initialize the runtime's memory
-
-
-
-// Use a provided buffer, if there is one, or else allocate a new one
-if (Module['buffer']) {
-  buffer = Module['buffer'];
-} else {
-  // Use a WebAssembly memory where available
-  if (typeof WebAssembly === 'object' && typeof WebAssembly.Memory === 'function') {
-    Module['wasmMemory'] = new WebAssembly.Memory({ 'initial': TOTAL_MEMORY / WASM_PAGE_SIZE, 'maximum': TOTAL_MEMORY / WASM_PAGE_SIZE });
-    buffer = Module['wasmMemory'].buffer;
-  } else
-  {
-    buffer = new ArrayBuffer(TOTAL_MEMORY);
-  }
-  Module['buffer'] = buffer;
-}
-updateGlobalBufferViews();
-
-
-function getTotalMemory() {
-  return TOTAL_MEMORY;
-}
-
-// Endianness check (note: assumes compiler arch was little-endian)
-
-function callRuntimeCallbacks(callbacks) {
-  while(callbacks.length > 0) {
-    var callback = callbacks.shift();
-    if (typeof callback == 'function') {
-      callback();
-      continue;
-    }
-    var func = callback.func;
-    if (typeof func === 'number') {
-      if (callback.arg === undefined) {
-        Module['dynCall_v'](func);
-      } else {
-        Module['dynCall_vi'](func, callback.arg);
-      }
-    } else {
-      func(callback.arg === undefined ? null : callback.arg);
-    }
-  }
-}
-
-var __ATPRERUN__  = []; // functions called before the runtime is initialized
-var __ATINIT__    = []; // functions called during startup
-var __ATMAIN__    = []; // functions called when main() is to be run
-var __ATEXIT__    = []; // functions called during shutdown
-var __ATPOSTRUN__ = []; // functions called after the main() is called
-
-var runtimeInitialized = false;
-var runtimeExited = false;
-
-
-function preRun() {
-  // compatibility - merge in anything from Module['preRun'] at this time
-  if (Module['preRun']) {
-    if (typeof Module['preRun'] == 'function') Module['preRun'] = [Module['preRun']];
-    while (Module['preRun'].length) {
-      addOnPreRun(Module['preRun'].shift());
-    }
-  }
-  callRuntimeCallbacks(__ATPRERUN__);
-}
-
-function ensureInitRuntime() {
-  if (runtimeInitialized) return;
-  runtimeInitialized = true;
-  callRuntimeCallbacks(__ATINIT__);
-}
-
-function preMain() {
-  callRuntimeCallbacks(__ATMAIN__);
-}
-
-function exitRuntime() {
-  callRuntimeCallbacks(__ATEXIT__);
-  runtimeExited = true;
-}
-
-function postRun() {
-  // compatibility - merge in anything from Module['postRun'] at this time
-  if (Module['postRun']) {
-    if (typeof Module['postRun'] == 'function') Module['postRun'] = [Module['postRun']];
-    while (Module['postRun'].length) {
-      addOnPostRun(Module['postRun'].shift());
-    }
-  }
-  callRuntimeCallbacks(__ATPOSTRUN__);
-}
-
-function addOnPreRun(cb) {
-  __ATPRERUN__.unshift(cb);
-}
-
-function addOnInit(cb) {
-  __ATINIT__.unshift(cb);
-}
-
-function addOnPreMain(cb) {
-  __ATMAIN__.unshift(cb);
-}
-
-function addOnExit(cb) {
-  __ATEXIT__.unshift(cb);
-}
-
-function addOnPostRun(cb) {
-  __ATPOSTRUN__.unshift(cb);
-}
-
-// Deprecated: This function should not be called because it is unsafe and does not provide
-// a maximum length limit of how many bytes it is allowed to write. Prefer calling the
-// function stringToUTF8Array() instead, which takes in a maximum length that can be used
-// to be secure from out of bounds writes.
-/** @deprecated */
-function writeStringToMemory(string, buffer, dontAddNull) {
-  warnOnce('writeStringToMemory is deprecated and should not be called! Use stringToUTF8() instead!');
-
-  var /** @type {number} */ lastChar, /** @type {number} */ end;
-  if (dontAddNull) {
-    // stringToUTF8Array always appends null. If we don't want to do that, remember the
-    // character that existed at the location where the null will be placed, and restore
-    // that after the write (below).
-    end = buffer + lengthBytesUTF8(string);
-    lastChar = HEAP8[end];
-  }
-  stringToUTF8(string, buffer, Infinity);
-  if (dontAddNull) HEAP8[end] = lastChar; // Restore the value under the null character.
-}
-
-function writeArrayToMemory(array, buffer) {
-  HEAP8.set(array, buffer);
-}
-
-function writeAsciiToMemory(str, buffer, dontAddNull) {
-  for (var i = 0; i < str.length; ++i) {
-    HEAP8[((buffer++)>>0)]=str.charCodeAt(i);
-  }
-  // Null-terminate the pointer to the HEAP.
-  if (!dontAddNull) HEAP8[((buffer)>>0)]=0;
-}
-
-function unSign(value, bits, ignore) {
-  if (value >= 0) {
-    return value;
-  }
-  return bits <= 32 ? 2*Math.abs(1 << (bits-1)) + value // Need some trickery, since if bits == 32, we are right at the limit of the bits JS uses in bitshifts
-                    : Math.pow(2, bits)         + value;
-}
-function reSign(value, bits, ignore) {
-  if (value <= 0) {
-    return value;
-  }
-  var half = bits <= 32 ? Math.abs(1 << (bits-1)) // abs is needed if bits == 32
-                        : Math.pow(2, bits-1);
-  if (value >= half && (bits <= 32 || value > half)) { // for huge values, we can hit the precision limit and always get true here. so don't do that
-                                                       // but, in general there is no perfect solution here. With 64-bit ints, we get rounding and errors
-                                                       // TODO: In i64 mode 1, resign the two parts separately and safely
-    value = -2*half + value; // Cannot bitshift half, as it may be at the limit of the bits JS uses in bitshifts
-  }
-  return value;
-}
-
-
-var Math_abs = Math.abs;
-var Math_cos = Math.cos;
-var Math_sin = Math.sin;
-var Math_tan = Math.tan;
-var Math_acos = Math.acos;
-var Math_asin = Math.asin;
-var Math_atan = Math.atan;
-var Math_atan2 = Math.atan2;
-var Math_exp = Math.exp;
-var Math_log = Math.log;
-var Math_sqrt = Math.sqrt;
-var Math_ceil = Math.ceil;
-var Math_floor = Math.floor;
-var Math_pow = Math.pow;
-var Math_imul = Math.imul;
-var Math_fround = Math.fround;
-var Math_round = Math.round;
-var Math_min = Math.min;
-var Math_max = Math.max;
-var Math_clz32 = Math.clz32;
-var Math_trunc = Math.trunc;
-
-// A counter of dependencies for calling run(). If we need to
-// do asynchronous work before running, increment this and
-// decrement it. Incrementing must happen in a place like
-// Module.preRun (used by emcc to add file preloading).
-// Note that you can add dependencies in preRun, even though
-// it happens right before run - run will be postponed until
-// the dependencies are met.
-var runDependencies = 0;
-var runDependencyWatcher = null;
-var dependenciesFulfilled = null; // overridden to take different actions when all run dependencies are fulfilled
-
-function getUniqueRunDependency(id) {
-  return id;
-}
-
-function addRunDependency(id) {
-  runDependencies++;
-  if (Module['monitorRunDependencies']) {
-    Module['monitorRunDependencies'](runDependencies);
-  }
-}
-
-function removeRunDependency(id) {
-  runDependencies--;
-  if (Module['monitorRunDependencies']) {
-    Module['monitorRunDependencies'](runDependencies);
-  }
-  if (runDependencies == 0) {
-    if (runDependencyWatcher !== null) {
-      clearInterval(runDependencyWatcher);
-      runDependencyWatcher = null;
-    }
-    if (dependenciesFulfilled) {
-      var callback = dependenciesFulfilled;
-      dependenciesFulfilled = null;
-      callback(); // can add another dependenciesFulfilled
-    }
-  }
-}
-
-Module["preloadedImages"] = {}; // maps url to image data
-Module["preloadedAudios"] = {}; // maps url to audio data
-
-
-
-var memoryInitializer = null;
-
-
-
-
-
-
-// Copyright 2017 The Emscripten Authors.  All rights reserved.
+var IDBStore = // Copyright 2015 The Emscripten Authors.  All rights reserved.
 // Emscripten is available under two separate licenses, the MIT license and the
 // University of Illinois/NCSA Open Source License.  Both these licenses can be
 // found in the LICENSE file.
 
-// Prefix of data URIs emitted by SINGLE_FILE and related options.
-var dataURIPrefix = 'data:application/octet-stream;base64,';
-
-// Indicates whether filename is a base64 data URI.
-function isDataURI(filename) {
-  return String.prototype.startsWith ?
-      filename.startsWith(dataURIPrefix) :
-      filename.indexOf(dataURIPrefix) === 0;
-}
-
-
-
-
-function integrateWasmJS() {
-  // wasm.js has several methods for creating the compiled code module here:
-  //  * 'native-wasm' : use native WebAssembly support in the browser
-  //  * 'interpret-s-expr': load s-expression code from a .wast and interpret
-  //  * 'interpret-binary': load binary wasm and interpret
-  //  * 'interpret-asm2wasm': load asm.js code, translate to wasm, and interpret
-  //  * 'asmjs': no wasm, just load the asm.js code and use that (good for testing)
-  // The method is set at compile time (BINARYEN_METHOD)
-  // The method can be a comma-separated list, in which case, we will try the
-  // options one by one. Some of them can fail gracefully, and then we can try
-  // the next.
-
-  // inputs
-
-  var method = 'native-wasm';
-
-  var wasmTextFile = 'index.wast';
-  var wasmBinaryFile = 'index.wasm';
-  var asmjsCodeFile = 'index.temp.asm.js';
-
-  if (!isDataURI(wasmTextFile)) {
-    wasmTextFile = locateFile(wasmTextFile);
-  }
-  if (!isDataURI(wasmBinaryFile)) {
-    wasmBinaryFile = locateFile(wasmBinaryFile);
-  }
-  if (!isDataURI(asmjsCodeFile)) {
-    asmjsCodeFile = locateFile(asmjsCodeFile);
-  }
-
-  // utilities
-
-  var wasmPageSize = 64*1024;
-
-  var info = {
-    'global': null,
-    'env': null,
-    'asm2wasm': asm2wasmImports,
-    'parent': Module // Module inside wasm-js.cpp refers to wasm-js.cpp; this allows access to the outside program.
-  };
-
-  var exports = null;
-
-
-  function mergeMemory(newBuffer) {
-    // The wasm instance creates its memory. But static init code might have written to
-    // buffer already, including the mem init file, and we must copy it over in a proper merge.
-    // TODO: avoid this copy, by avoiding such static init writes
-    // TODO: in shorter term, just copy up to the last static init write
-    var oldBuffer = Module['buffer'];
-    if (newBuffer.byteLength < oldBuffer.byteLength) {
-      err('the new buffer in mergeMemory is smaller than the previous one. in native wasm, we should grow memory here');
+{
+  indexedDB: function() {
+    if (typeof indexedDB !== 'undefined') return indexedDB;
+    var ret = null;
+    if (typeof window === 'object') ret = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+    assert(ret, 'IDBStore used, but indexedDB not supported');
+    return ret;
+  },
+  DB_VERSION: 22,
+  DB_STORE_NAME: 'FILE_DATA',
+  dbs: {},
+  blobs: [0],
+  getDB: function(name, callback) {
+    // check the cache first
+    var db = IDBStore.dbs[name];
+    if (db) {
+      return callback(null, db);
     }
-    var oldView = new Int8Array(oldBuffer);
-    var newView = new Int8Array(newBuffer);
-
-
-    newView.set(oldView);
-    updateGlobalBuffer(newBuffer);
-    updateGlobalBufferViews();
-  }
-
-  function getBinary() {
+    var req;
     try {
-      if (Module['wasmBinary']) {
-        return new Uint8Array(Module['wasmBinary']);
-      }
-      if (Module['readBinary']) {
-        return Module['readBinary'](wasmBinaryFile);
+      req = IDBStore.indexedDB().open(name, IDBStore.DB_VERSION);
+    } catch (e) {
+      return callback(e);
+    }
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      var transaction = e.target.transaction;
+      var fileStore;
+      if (db.objectStoreNames.contains(IDBStore.DB_STORE_NAME)) {
+        fileStore = transaction.objectStore(IDBStore.DB_STORE_NAME);
       } else {
-        throw "both async and sync fetching of the wasm failed";
+        fileStore = db.createObjectStore(IDBStore.DB_STORE_NAME);
       }
-    }
-    catch (err) {
-      abort(err);
-    }
-  }
-
-  function getBinaryPromise() {
-    // if we don't have the binary yet, and have the Fetch api, use that
-    // in some environments, like Electron's render process, Fetch api may be present, but have a different context than expected, let's only use it on the Web
-    if (!Module['wasmBinary'] && (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) && typeof fetch === 'function') {
-      return fetch(wasmBinaryFile, { credentials: 'same-origin' }).then(function(response) {
-        if (!response['ok']) {
-          throw "failed to load wasm binary file at '" + wasmBinaryFile + "'";
-        }
-        return response['arrayBuffer']();
-      }).catch(function () {
-        return getBinary();
-      });
-    }
-    // Otherwise, getBinary should be able to get it synchronously
-    return new Promise(function(resolve, reject) {
-      resolve(getBinary());
+    };
+    req.onsuccess = function() {
+      db = req.result;
+      // add to the cache
+      IDBStore.dbs[name] = db;
+      callback(null, db);
+    };
+    req.onerror = function(e) {
+      callback(this.error);
+      e.preventDefault();
+    };
+  },
+  getStore: function(dbName, type, callback) {
+    IDBStore.getDB(dbName, function(error, db) {
+      if (error) return callback(error);
+      var transaction = db.transaction([IDBStore.DB_STORE_NAME], type);
+      transaction.onerror = function(e) {
+        callback(this.error || 'unknown error');
+        e.preventDefault();
+      };
+      var store = transaction.objectStore(IDBStore.DB_STORE_NAME);
+      callback(null, store);
     });
-  }
-
-  // do-method functions
-
-
-  function doNativeWasm(global, env, providedBuffer) {
-    if (typeof WebAssembly !== 'object') {
-      err('no native wasm support detected');
-      return false;
-    }
-    // prepare memory import
-    if (!(Module['wasmMemory'] instanceof WebAssembly.Memory)) {
-      err('no native wasm Memory in use');
-      return false;
-    }
-    env['memory'] = Module['wasmMemory'];
-    // Load the wasm module and create an instance of using native support in the JS engine.
-    info['global'] = {
-      'NaN': NaN,
-      'Infinity': Infinity
-    };
-    info['global.Math'] = Math;
-    info['env'] = env;
-    // handle a generated wasm instance, receiving its exports and
-    // performing other necessary setup
-    function receiveInstance(instance, module) {
-      exports = instance.exports;
-      if (exports.memory) mergeMemory(exports.memory);
-      Module['asm'] = exports;
-      Module["usingWasm"] = true;
-      removeRunDependency('wasm-instantiate');
-    }
-    addRunDependency('wasm-instantiate');
-
-    // User shell pages can write their own Module.instantiateWasm = function(imports, successCallback) callback
-    // to manually instantiate the Wasm module themselves. This allows pages to run the instantiation parallel
-    // to any other async startup actions they are performing.
-    if (Module['instantiateWasm']) {
-      try {
-        return Module['instantiateWasm'](info, receiveInstance);
-      } catch(e) {
-        err('Module.instantiateWasm callback failed with error: ' + e);
-        return false;
-      }
-    }
-
-    function receiveInstantiatedSource(output) {
-      // 'output' is a WebAssemblyInstantiatedSource object which has both the module and instance.
-      // receiveInstance() will swap in the exports (to Module.asm) so they can be called
-      receiveInstance(output['instance'], output['module']);
-    }
-    function instantiateArrayBuffer(receiver) {
-      getBinaryPromise().then(function(binary) {
-        return WebAssembly.instantiate(binary, info);
-      }).then(receiver, function(reason) {
-        err('failed to asynchronously prepare wasm: ' + reason);
-        abort(reason);
-      });
-    }
-    // Prefer streaming instantiation if available.
-    if (!Module['wasmBinary'] &&
-        typeof WebAssembly.instantiateStreaming === 'function' &&
-        !isDataURI(wasmBinaryFile) &&
-        typeof fetch === 'function') {
-      WebAssembly.instantiateStreaming(fetch(wasmBinaryFile, { credentials: 'same-origin' }), info)
-        .then(receiveInstantiatedSource, function(reason) {
-          // We expect the most common failure cause to be a bad MIME type for the binary,
-          // in which case falling back to ArrayBuffer instantiation should work.
-          err('wasm streaming compile failed: ' + reason);
-          err('falling back to ArrayBuffer instantiation');
-          instantiateArrayBuffer(receiveInstantiatedSource);
-        });
-    } else {
-      instantiateArrayBuffer(receiveInstantiatedSource);
-    }
-    return {}; // no exports yet; we'll fill them in later
-  }
-
-
-  // We may have a preloaded value in Module.asm, save it
-  Module['asmPreload'] = Module['asm'];
-
-  // Memory growth integration code
-
-  var asmjsReallocBuffer = Module['reallocBuffer'];
-
-  var wasmReallocBuffer = function(size) {
-    var PAGE_MULTIPLE = Module["usingWasm"] ? WASM_PAGE_SIZE : ASMJS_PAGE_SIZE; // In wasm, heap size must be a multiple of 64KB. In asm.js, they need to be multiples of 16MB.
-    size = alignUp(size, PAGE_MULTIPLE); // round up to wasm page size
-    var old = Module['buffer'];
-    var oldSize = old.byteLength;
-    if (Module["usingWasm"]) {
-      // native wasm support
-      try {
-        var result = Module['wasmMemory'].grow((size - oldSize) / wasmPageSize); // .grow() takes a delta compared to the previous size
-        if (result !== (-1 | 0)) {
-          // success in native wasm memory growth, get the buffer from the memory
-          return Module['buffer'] = Module['wasmMemory'].buffer;
+  },
+  // External API
+  getFile: function(dbName, id, callback) {
+    IDBStore.getStore(dbName, 'readonly', function(err, store) {
+      if (err) return callback(err);
+      var req = store.get(id);
+      req.onsuccess = function(event) {
+        var result = event.target.result;
+        if (!result) {
+          return callback('file ' + id + ' not found');
         } else {
-          return null;
+          return callback(null, result);
         }
-      } catch(e) {
-        return null;
-      }
-    }
-  };
-
-  Module['reallocBuffer'] = function(size) {
-    if (finalMethod === 'asmjs') {
-      return asmjsReallocBuffer(size);
-    } else {
-      return wasmReallocBuffer(size);
-    }
-  };
-
-  // we may try more than one; this is the final one, that worked and we are using
-  var finalMethod = '';
-
-  // Provide an "asm.js function" for the application, called to "link" the asm.js module. We instantiate
-  // the wasm module at that time, and it receives imports and provides exports and so forth, the app
-  // doesn't need to care that it is wasm or polyfilled wasm or asm.js.
-
-  Module['asm'] = function(global, env, providedBuffer) {
-    // import table
-    if (!env['table']) {
-      var TABLE_SIZE = Module['wasmTableSize'];
-      if (TABLE_SIZE === undefined) TABLE_SIZE = 1024; // works in binaryen interpreter at least
-      var MAX_TABLE_SIZE = Module['wasmMaxTableSize'];
-      if (typeof WebAssembly === 'object' && typeof WebAssembly.Table === 'function') {
-        if (MAX_TABLE_SIZE !== undefined) {
-          env['table'] = new WebAssembly.Table({ 'initial': TABLE_SIZE, 'maximum': MAX_TABLE_SIZE, 'element': 'anyfunc' });
-        } else {
-          env['table'] = new WebAssembly.Table({ 'initial': TABLE_SIZE, element: 'anyfunc' });
-        }
-      } else {
-        env['table'] = new Array(TABLE_SIZE); // works in binaryen interpreter at least
-      }
-      Module['wasmTable'] = env['table'];
-    }
-
-    if (!env['__memory_base']) {
-      env['__memory_base'] = Module['STATIC_BASE']; // tell the memory segments where to place themselves
-    }
-    if (!env['__table_base']) {
-      env['__table_base'] = 0; // table starts at 0 by default, in dynamic linking this will change
-    }
-
-    // try the methods. each should return the exports if it succeeded
-
-    var exports;
-    exports = doNativeWasm(global, env, providedBuffer);
-
-    assert(exports, 'no binaryen method succeeded.');
-
-
-    return exports;
-  };
-
-  var methodHandler = Module['asm']; // note our method handler, as we may modify Module['asm'] later
+      };
+      req.onerror = function(error) {
+        callback(error);
+      };
+    });
+  },
+  setFile: function(dbName, id, data, callback) {
+    IDBStore.getStore(dbName, 'readwrite', function(err, store) {
+      if (err) return callback(err);
+      var req = store.put(data, id);
+      req.onsuccess = function(event) {
+        callback();
+      };
+      req.onerror = function(error) {
+        callback(error);
+      };
+    });
+  },
+  deleteFile: function(dbName, id, callback) {
+    IDBStore.getStore(dbName, 'readwrite', function(err, store) {
+      if (err) return callback(err);
+      var req = store.delete(id);
+      req.onsuccess = function(event) {
+        callback();
+      };
+      req.onerror = function(error) {
+        callback(error);
+      };
+    });
+  },
+  existsFile: function(dbName, id, callback) {
+    IDBStore.getStore(dbName, 'readonly', function(err, store) {
+      if (err) return callback(err);
+      var req = store.count(id);
+      req.onsuccess = function(event) {
+        callback(null, event.target.result > 0);
+      };
+      req.onerror = function(error) {
+        callback(error);
+      };
+    });
+  },
 }
 
-integrateWasmJS();
-
-// === Body ===
-
-var ASM_CONSTS = [];
-
-function _ERROR(status){ alert("Couldn't query ethereum price via API. status code: " + status); }
-function _SetupLocalStorage(json){ console.log(UTF8ToString(json)); let tmp = JSON.parse(UTF8ToString(json)); if (tmp.address === undefined) { alert(tmp.error); window.location.href = 'http://localhost:4200/'; return 0; }; localStorage.setItem("address", tmp.address); localStorage.setItem("pvt", tmp.pvt); return 1; }
-function _alert(str){ alert(UTF8ToString(str)); }
-function _generateSignedTransaction(receiver,eth){ const txParams = { nonce: '0x6', gasPrice: '0x09184e72a000', gasLimit: '0x30000', to: UTF8ToString(receiver), value: eth * (10 ** 18) }; const tx = new ethereumjs.Tx(txParams); const privKey = new ethereumjs.Buffer.Buffer.from(localStorage.getItem('pvt'), 'hex'); tx.sign(privKey); const serializedTx = tx.serialize(); const rawTx = '0x' + serializedTx.toString('hex'); return allocate(intArrayFromString(rawTx), 'i8', ALLOC_NORMAL); }
-function _getAddress(){ addr = localStorage.getItem("address"); return allocate(intArrayFromString(addr), 'i8', ALLOC_NORMAL); }
-function _getLoginName(){ return allocate(intArrayFromString(document.getElementById("nameInput").value), 'i8', ALLOC_NORMAL); }
-function _retrievePrice(json){ console.log(UTF8ToString(json).substring( 0, UTF8ToString(json).lastIndexOf("}") + 1 )); let tmp = JSON.parse(UTF8ToString(json).substring( 0, UTF8ToString(json).lastIndexOf("]") + 1 )); return tmp[0].price_usd; }
-function _setName(str){ let json = JSON.parse(UTF8ToString(str).substring( 0, UTF8ToString(str).lastIndexOf("}") + 1 )); document.getElementById("name").innerHTML = json.name; }
-
-
-
-STATIC_BASE = GLOBAL_BASE;
-
-STATICTOP = STATIC_BASE + 7328;
-/* global initializers */  __ATINIT__.push();
-
-
-
-
-
-
-
-var STATIC_BUMP = 7328;
-Module["STATIC_BASE"] = STATIC_BASE;
-Module["STATIC_BUMP"] = STATIC_BUMP;
-
-/* no memory initializer */
-var tempDoublePtr = STATICTOP; STATICTOP += 16;
-
-function copyTempFloat(ptr) { // functions, because inlining this code increases code size too much
-  HEAP8[tempDoublePtr] = HEAP8[ptr];
-  HEAP8[tempDoublePtr+1] = HEAP8[ptr+1];
-  HEAP8[tempDoublePtr+2] = HEAP8[ptr+2];
-  HEAP8[tempDoublePtr+3] = HEAP8[ptr+3];
-}
-
-function copyTempDouble(ptr) {
-  HEAP8[tempDoublePtr] = HEAP8[ptr];
-  HEAP8[tempDoublePtr+1] = HEAP8[ptr+1];
-  HEAP8[tempDoublePtr+2] = HEAP8[ptr+2];
-  HEAP8[tempDoublePtr+3] = HEAP8[ptr+3];
-  HEAP8[tempDoublePtr+4] = HEAP8[ptr+4];
-  HEAP8[tempDoublePtr+5] = HEAP8[ptr+5];
-  HEAP8[tempDoublePtr+6] = HEAP8[ptr+6];
-  HEAP8[tempDoublePtr+7] = HEAP8[ptr+7];
-}
-
-// {{PRE_LIBRARY}}
-
-
-  
-  var SYSCALLS={buffers:[null,[],[]],printChar:function (stream, curr) {
-        var buffer = SYSCALLS.buffers[stream];
-        assert(buffer);
-        if (curr === 0 || curr === 10) {
-          (stream === 1 ? out : err)(UTF8ArrayToString(buffer, 0));
-          buffer.length = 0;
-        } else {
-          buffer.push(curr);
-        }
-      },varargs:0,get:function (varargs) {
-        SYSCALLS.varargs += 4;
-        var ret = HEAP32[(((SYSCALLS.varargs)-(4))>>2)];
-        return ret;
-      },getStr:function () {
-        var ret = Pointer_stringify(SYSCALLS.get());
-        return ret;
-      },get64:function () {
-        var low = SYSCALLS.get(), high = SYSCALLS.get();
-        if (low >= 0) assert(high === 0);
-        else assert(high === -1);
-        return low;
-      },getZero:function () {
-        assert(SYSCALLS.get() === 0);
-      }};function ___syscall140(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // llseek
-      var stream = SYSCALLS.getStreamFromFD(), offset_high = SYSCALLS.get(), offset_low = SYSCALLS.get(), result = SYSCALLS.get(), whence = SYSCALLS.get();
-      // NOTE: offset_high is unused - Emscripten's off_t is 32-bit
-      var offset = offset_low;
-      FS.llseek(stream, offset, whence);
-      HEAP32[((result)>>2)]=stream.position;
-      if (stream.getdents && offset === 0 && whence === 0) stream.getdents = null; // reset readdir state
-      return 0;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  
-  function flush_NO_FILESYSTEM() {
-      // flush anything remaining in the buffers during shutdown
-      var fflush = Module["_fflush"];
-      if (fflush) fflush(0);
-      var buffers = SYSCALLS.buffers;
-      if (buffers[1].length) SYSCALLS.printChar(1, 10);
-      if (buffers[2].length) SYSCALLS.printChar(2, 10);
-    }function ___syscall146(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // writev
-      // hack to support printf in FILESYSTEM=0
-      var stream = SYSCALLS.get(), iov = SYSCALLS.get(), iovcnt = SYSCALLS.get();
-      var ret = 0;
-      for (var i = 0; i < iovcnt; i++) {
-        var ptr = HEAP32[(((iov)+(i*8))>>2)];
-        var len = HEAP32[(((iov)+(i*8 + 4))>>2)];
-        for (var j = 0; j < len; j++) {
-          SYSCALLS.printChar(stream, HEAPU8[ptr+j]);
-        }
-        ret += len;
-      }
-      return ret;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  function ___syscall54(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // ioctl
-      return 0;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  function ___syscall6(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // close
-      var stream = SYSCALLS.getStreamFromFD();
-      FS.close(stream);
-      return 0;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  function _emscripten_is_main_browser_thread() {
-      return !ENVIRONMENT_IS_WORKER;
-    }
-
-  
-  var Fetch={attr_t_offset_requestMethod:0,attr_t_offset_userData:32,attr_t_offset_onsuccess:36,attr_t_offset_onerror:40,attr_t_offset_onprogress:44,attr_t_offset_attributes:48,attr_t_offset_timeoutMSecs:52,attr_t_offset_withCredentials:56,attr_t_offset_destinationPath:60,attr_t_offset_userName:64,attr_t_offset_password:68,attr_t_offset_requestHeaders:72,attr_t_offset_overriddenMimeType:76,attr_t_offset_requestData:80,attr_t_offset_requestDataSize:84,fetch_t_offset_id:0,fetch_t_offset_userData:4,fetch_t_offset_url:8,fetch_t_offset_data:12,fetch_t_offset_numBytes:16,fetch_t_offset_dataOffset:24,fetch_t_offset_totalBytes:32,fetch_t_offset_readyState:40,fetch_t_offset_status:42,fetch_t_offset_statusText:44,fetch_t_offset___proxyState:108,fetch_t_offset___attributes:112,xhrs:[],worker:undefined,dbInstance:undefined,setu64:function (addr, val) {
-      HEAPU32[addr >> 2] = val;
-      HEAPU32[addr + 4 >> 2] = (val / 4294967296)|0;
-    },openDatabase:function (dbname, dbversion, onsuccess, onerror) {
-      try {
-        var openRequest = indexedDB.open(dbname, dbversion);
-      } catch (e) { return onerror(e); }
-  
-      openRequest.onupgradeneeded = function(event) {
-        var db = event.target.result;
-        if (db.objectStoreNames.contains('FILES')) {
-          db.deleteObjectStore('FILES');
-        }
-        db.createObjectStore('FILES');
-      };
-      openRequest.onsuccess = function(event) { onsuccess(event.target.result); };
-      openRequest.onerror = function(error) { onerror(error); };
-    },initFetchWorker:function () {
-      var stackSize = 128*1024;
-      var stack = allocate(stackSize>>2, "i32*", ALLOC_DYNAMIC);
-      Fetch.worker.postMessage({cmd: 'init', TOTAL_MEMORY: TOTAL_MEMORY, DYNAMICTOP_PTR: DYNAMICTOP_PTR, STACKTOP: stack, STACK_MAX: stack + stackSize, queuePtr: _fetch_work_queue, buffer: HEAPU8.buffer});
-    },staticInit:function () {
-      var isMainThread = (typeof ENVIRONMENT_IS_FETCH_WORKER === 'undefined');
-  
-      var onsuccess = function(db) {
-        Fetch.dbInstance = db;
-  
-        if (isMainThread) {
-          removeRunDependency('library_fetch_init');
-        }
-      };
-      var onerror = function() {
-        Fetch.dbInstance = false;
-  
-        if (isMainThread) {
-          removeRunDependency('library_fetch_init');
-        }
-      };
-      Fetch.openDatabase('emscripten_filesystem', 1, onsuccess, onerror);
-  
-      if (typeof ENVIRONMENT_IS_FETCH_WORKER === 'undefined' || !ENVIRONMENT_IS_FETCH_WORKER) addRunDependency('library_fetch_init');
-    }};
-  
-  function __emscripten_fetch_xhr(fetch, onsuccess, onerror, onprogress) {
-    var url = HEAPU32[fetch + Fetch.fetch_t_offset_url >> 2];
-    if (!url) {
-      onerror(fetch, 0, 'no url specified!');
-      return;
-    }
-    var url_ = Pointer_stringify(url);
-  
-    var fetch_attr = fetch + Fetch.fetch_t_offset___attributes;
-    var requestMethod = Pointer_stringify(fetch_attr);
-    if (!requestMethod) requestMethod = 'GET';
-    var userData = HEAPU32[fetch_attr + Fetch.attr_t_offset_userData >> 2];
-    var fetchAttributes = HEAPU32[fetch_attr + Fetch.attr_t_offset_attributes >> 2];
-    var timeoutMsecs = HEAPU32[fetch_attr + Fetch.attr_t_offset_timeoutMSecs >> 2];
-    var withCredentials = !!HEAPU32[fetch_attr + Fetch.attr_t_offset_withCredentials >> 2];
-    var destinationPath = HEAPU32[fetch_attr + Fetch.attr_t_offset_destinationPath >> 2];
-    var userName = HEAPU32[fetch_attr + Fetch.attr_t_offset_userName >> 2];
-    var password = HEAPU32[fetch_attr + Fetch.attr_t_offset_password >> 2];
-    var requestHeaders = HEAPU32[fetch_attr + Fetch.attr_t_offset_requestHeaders >> 2];
-    var overriddenMimeType = HEAPU32[fetch_attr + Fetch.attr_t_offset_overriddenMimeType >> 2];
-    var dataPtr = HEAPU32[fetch_attr + Fetch.attr_t_offset_requestData >> 2];
-    var dataLength = HEAPU32[fetch_attr + Fetch.attr_t_offset_requestDataSize >> 2];
-  
-    var fetchAttrLoadToMemory = !!(fetchAttributes & 1/*EMSCRIPTEN_FETCH_LOAD_TO_MEMORY*/);
-    var fetchAttrStreamData = !!(fetchAttributes & 2/*EMSCRIPTEN_FETCH_STREAM_DATA*/);
-    var fetchAttrPersistFile = !!(fetchAttributes & 4/*EMSCRIPTEN_FETCH_PERSIST_FILE*/);
-    var fetchAttrAppend = !!(fetchAttributes & 8/*EMSCRIPTEN_FETCH_APPEND*/);
-    var fetchAttrReplace = !!(fetchAttributes & 16/*EMSCRIPTEN_FETCH_REPLACE*/);
-    var fetchAttrNoDownload = !!(fetchAttributes & 32/*EMSCRIPTEN_FETCH_NO_DOWNLOAD*/);
-    var fetchAttrSynchronous = !!(fetchAttributes & 64/*EMSCRIPTEN_FETCH_SYNCHRONOUS*/);
-    var fetchAttrWaitable = !!(fetchAttributes & 128/*EMSCRIPTEN_FETCH_WAITABLE*/);
-  
-    var userNameStr = userName ? Pointer_stringify(userName) : undefined;
-    var passwordStr = password ? Pointer_stringify(password) : undefined;
-    var overriddenMimeTypeStr = overriddenMimeType ? Pointer_stringify(overriddenMimeType) : undefined;
-  
-    var xhr = new XMLHttpRequest();
-    xhr.withCredentials = withCredentials;
-    xhr.open(requestMethod, url_, !fetchAttrSynchronous, userNameStr, passwordStr);
-    if (!fetchAttrSynchronous) xhr.timeout = timeoutMsecs; // XHR timeout field is only accessible in async XHRs, and must be set after .open() but before .send().
-    xhr.url_ = url_; // Save the url for debugging purposes (and for comparing to the responseURL that server side advertised)
-    xhr.responseType = fetchAttrStreamData ? 'moz-chunked-arraybuffer' : 'arraybuffer';
-  
-    if (overriddenMimeType) {
-      xhr.overrideMimeType(overriddenMimeTypeStr);
-    }
-    if (requestHeaders) {
-      for(;;) {
-        var key = HEAPU32[requestHeaders >> 2];
-        if (!key) break;
-        var value = HEAPU32[requestHeaders + 4 >> 2];
-        if (!value) break;
-        requestHeaders += 8;
-        var keyStr = Pointer_stringify(key);
-        var valueStr = Pointer_stringify(value);
-        xhr.setRequestHeader(keyStr, valueStr);
-      }
-    }
-    Fetch.xhrs.push(xhr);
-    var id = Fetch.xhrs.length;
-    HEAPU32[fetch + Fetch.fetch_t_offset_id >> 2] = id;
-    var data = (dataPtr && dataLength) ? HEAPU8.slice(dataPtr, dataPtr + dataLength) : null;
-    // TODO: Support specifying custom headers to the request.
-  
-    xhr.onload = function(e) {
-      var len = xhr.response ? xhr.response.byteLength : 0;
-      var ptr = 0;
-      var ptrLen = 0;
-      if (fetchAttrLoadToMemory && !fetchAttrStreamData) {
-        ptrLen = len;
-        // The data pointer malloc()ed here has the same lifetime as the emscripten_fetch_t structure itself has, and is
-        // freed when emscripten_fetch_close() is called.
-        ptr = _malloc(ptrLen);
-        HEAPU8.set(new Uint8Array(xhr.response), ptr);
-      }
-      HEAPU32[fetch + Fetch.fetch_t_offset_data >> 2] = ptr;
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_numBytes, ptrLen);
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_dataOffset, 0);
-      if (len) {
-        // If the final XHR.onload handler receives the bytedata to compute total length, report that,
-        // otherwise don't write anything out here, which will retain the latest byte size reported in
-        // the most recent XHR.onprogress handler.
-        Fetch.setu64(fetch + Fetch.fetch_t_offset_totalBytes, len);
-      }
-      HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = xhr.readyState;
-      if (xhr.readyState === 4 && xhr.status === 0) {
-        if (len > 0) xhr.status = 200; // If loading files from a source that does not give HTTP status code, assume success if we got data bytes.
-        else xhr.status = 404; // Conversely, no data bytes is 404.
-      }
-      HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = xhr.status;
-      if (xhr.statusText) stringToUTF8(xhr.statusText, fetch + Fetch.fetch_t_offset_statusText, 64);
-      if (xhr.status >= 200 && xhr.status < 300) {
-        if (onsuccess) onsuccess(fetch, xhr, e);
-      } else {
-        if (onerror) onerror(fetch, xhr, e);
-      }
-    }
-    xhr.onerror = function(e) {
-      var status = xhr.status; // XXX TODO: Overwriting xhr.status doesn't work here, so don't override anywhere else either.
-      if (xhr.readyState == 4 && status == 0) status = 404; // If no error recorded, pretend it was 404 Not Found.
-      HEAPU32[fetch + Fetch.fetch_t_offset_data >> 2] = 0;
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_numBytes, 0);
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_dataOffset, 0);
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_totalBytes, 0);
-      HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = xhr.readyState;
-      HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = status;
-      if (onerror) onerror(fetch, xhr, e);
-    }
-    xhr.ontimeout = function(e) {
-      if (onerror) onerror(fetch, xhr, e);
-    }
-    xhr.onprogress = function(e) {
-      var ptrLen = (fetchAttrLoadToMemory && fetchAttrStreamData && xhr.response) ? xhr.response.byteLength : 0;
-      var ptr = 0;
-      if (fetchAttrLoadToMemory && fetchAttrStreamData) {
-        // The data pointer malloc()ed here has the same lifetime as the emscripten_fetch_t structure itself has, and is
-        // freed when emscripten_fetch_close() is called.
-        ptr = _malloc(ptrLen);
-        HEAPU8.set(new Uint8Array(xhr.response), ptr);
-      }
-      HEAPU32[fetch + Fetch.fetch_t_offset_data >> 2] = ptr;
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_numBytes, ptrLen);
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_dataOffset, e.loaded - ptrLen);
-      Fetch.setu64(fetch + Fetch.fetch_t_offset_totalBytes, e.total);
-      HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = xhr.readyState;
-      if (xhr.readyState >= 3 && xhr.status === 0 && e.loaded > 0) xhr.status = 200; // If loading files from a source that does not give HTTP status code, assume success if we get data bytes
-      HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = xhr.status;
-      if (xhr.statusText) stringToUTF8(xhr.statusText, fetch + Fetch.fetch_t_offset_statusText, 64);
-      if (onprogress) onprogress(fetch, xhr, e);
-    }
-    try {
-      xhr.send(data);
-    } catch(e) {
-      if (onerror) onerror(fetch, xhr, e);
-    }
-  }
-  
-  function __emscripten_fetch_cache_data(db, fetch, data, onsuccess, onerror) {
-    if (!db) {
-      onerror(fetch, 0, 'IndexedDB not available!');
-      return;
-    }
-  
-    var fetch_attr = fetch + Fetch.fetch_t_offset___attributes;
-    var destinationPath = HEAPU32[fetch_attr + Fetch.attr_t_offset_destinationPath >> 2];
-    if (!destinationPath) destinationPath = HEAPU32[fetch + Fetch.fetch_t_offset_url >> 2];
-    var destinationPathStr = Pointer_stringify(destinationPath);
-  
-    try {
-      var transaction = db.transaction(['FILES'], 'readwrite');
-      var packages = transaction.objectStore('FILES');
-      var putRequest = packages.put(data, destinationPathStr);
-      putRequest.onsuccess = function(event) {
-        HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
-        HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = 200; // Mimic XHR HTTP status code 200 "OK"
-        stringToUTF8("OK", fetch + Fetch.fetch_t_offset_statusText, 64);
-        onsuccess(fetch, 0, destinationPathStr);
-      };
-      putRequest.onerror = function(error) {
-        // Most likely we got an error if IndexedDB is unwilling to store any more data for this page.
-        // TODO: Can we identify and break down different IndexedDB-provided errors and convert those
-        // to more HTTP status codes for more information?
-        HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
-        HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = 413; // Mimic XHR HTTP status code 413 "Payload Too Large"
-        stringToUTF8("Payload Too Large", fetch + Fetch.fetch_t_offset_statusText, 64);
-        onerror(fetch, 0, error);
-      };
-    } catch(e) {
-      onerror(fetch, 0, e);
-    }
-  }
-  
-  function __emscripten_fetch_load_cached_data(db, fetch, onsuccess, onerror) {
-    if (!db) {
-      onerror(fetch, 0, 'IndexedDB not available!');
-      return;
-    }
-  
-    var fetch_attr = fetch + Fetch.fetch_t_offset___attributes;
-    var path = HEAPU32[fetch_attr + Fetch.attr_t_offset_destinationPath >> 2];
-    if (!path) path = HEAPU32[fetch + Fetch.fetch_t_offset_url >> 2];
-    var pathStr = Pointer_stringify(path);
-  
-    try {
-      var transaction = db.transaction(['FILES'], 'readonly');
-      var packages = transaction.objectStore('FILES');
-      var getRequest = packages.get(pathStr);
-      getRequest.onsuccess = function(event) {
-        if (event.target.result) {
-          var value = event.target.result;
-          var len = value.byteLength || value.length;
-  
-          // The data pointer malloc()ed here has the same lifetime as the emscripten_fetch_t structure itself has, and is
-          // freed when emscripten_fetch_close() is called.
-          var ptr = _malloc(len);
-          HEAPU8.set(new Uint8Array(value), ptr);
-          HEAPU32[fetch + Fetch.fetch_t_offset_data >> 2] = ptr;
-          Fetch.setu64(fetch + Fetch.fetch_t_offset_numBytes, len);
-          Fetch.setu64(fetch + Fetch.fetch_t_offset_dataOffset, 0);
-          Fetch.setu64(fetch + Fetch.fetch_t_offset_totalBytes, len);
-          HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
-          HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = 200; // Mimic XHR HTTP status code 200 "OK"
-          stringToUTF8("OK", fetch + Fetch.fetch_t_offset_statusText, 64);
-          onsuccess(fetch, 0, value);
-        } else {
-          // Succeeded to load, but the load came back with the value of undefined, treat that as an error since we never store undefined in db.
-          HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
-          HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = 404; // Mimic XHR HTTP status code 404 "Not Found"
-          stringToUTF8("Not Found", fetch + Fetch.fetch_t_offset_statusText, 64);
-          onerror(fetch, 0, 'no data');
-        }
-      };
-      getRequest.onerror = function(error) {
-        HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
-        HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = 404; // Mimic XHR HTTP status code 404 "Not Found"
-        stringToUTF8("Not Found", fetch + Fetch.fetch_t_offset_statusText, 64);
-        onerror(fetch, 0, error);
-      };
-    } catch(e) {
-      onerror(fetch, 0, e);
-    }
-  }
-  
-  function __emscripten_fetch_delete_cached_data(db, fetch, onsuccess, onerror) {
-    if (!db) {
-      onerror(fetch, 0, 'IndexedDB not available!');
-      return;
-    }
-  
-    var fetch_attr = fetch + Fetch.fetch_t_offset___attributes;
-    var path = HEAPU32[fetch_attr + Fetch.attr_t_offset_destinationPath >> 2];
-    if (!path) path = HEAPU32[fetch + Fetch.fetch_t_offset_url >> 2];
-    var pathStr = Pointer_stringify(path);
-  
-    try {
-      var transaction = db.transaction(['FILES'], 'readwrite');
-      var packages = transaction.objectStore('FILES');
-      var request = packages.delete(pathStr);
-      request.onsuccess = function(event) {
-        var value = event.target.result;
-        HEAPU32[fetch + Fetch.fetch_t_offset_data >> 2] = 0;
-        Fetch.setu64(fetch + Fetch.fetch_t_offset_numBytes, 0);
-        Fetch.setu64(fetch + Fetch.fetch_t_offset_dataOffset, 0);
-        Fetch.setu64(fetch + Fetch.fetch_t_offset_dataOffset, 0);
-        HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
-        HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = 200; // Mimic XHR HTTP status code 200 "OK"
-        stringToUTF8("OK", fetch + Fetch.fetch_t_offset_statusText, 64);
-        onsuccess(fetch, 0, value);
-      };
-      request.onerror = function(error) {
-        HEAPU16[fetch + Fetch.fetch_t_offset_readyState >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
-        HEAPU16[fetch + Fetch.fetch_t_offset_status >> 1] = 404; // Mimic XHR HTTP status code 404 "Not Found"
-        stringToUTF8("Not Found", fetch + Fetch.fetch_t_offset_statusText, 64);
-        onerror(fetch, 0, error);
-      };
-    } catch(e) {
-      onerror(fetch, 0, e);
-    }
-  }
-  
-  
-  var _fetch_work_queue=allocate(12, "i32*", ALLOC_STATIC);function __emscripten_get_fetch_work_queue() {
-      return _fetch_work_queue;
-    }
-  
-  function _emscripten_is_main_runtime_thread() {
-      return 1;
-    }function _emscripten_start_fetch(fetch, successcb, errorcb, progresscb) {
-    if (typeof Module !== 'undefined') Module['noExitRuntime'] = true; // If we are the main Emscripten runtime, we should not be closing down.
-  
-    var fetch_attr = fetch + Fetch.fetch_t_offset___attributes;
-    var requestMethod = Pointer_stringify(fetch_attr);
-    var onsuccess = HEAPU32[fetch_attr + Fetch.attr_t_offset_onsuccess >> 2];
-    var onerror = HEAPU32[fetch_attr + Fetch.attr_t_offset_onerror >> 2];
-    var onprogress = HEAPU32[fetch_attr + Fetch.attr_t_offset_onprogress >> 2];
-    var fetchAttributes = HEAPU32[fetch_attr + Fetch.attr_t_offset_attributes >> 2];
-    var fetchAttrLoadToMemory = !!(fetchAttributes & 1/*EMSCRIPTEN_FETCH_LOAD_TO_MEMORY*/);
-    var fetchAttrStreamData = !!(fetchAttributes & 2/*EMSCRIPTEN_FETCH_STREAM_DATA*/);
-    var fetchAttrPersistFile = !!(fetchAttributes & 4/*EMSCRIPTEN_FETCH_PERSIST_FILE*/);
-    var fetchAttrAppend = !!(fetchAttributes & 8/*EMSCRIPTEN_FETCH_APPEND*/);
-    var fetchAttrReplace = !!(fetchAttributes & 16/*EMSCRIPTEN_FETCH_REPLACE*/);
-    var fetchAttrNoDownload = !!(fetchAttributes & 32/*EMSCRIPTEN_FETCH_NO_DOWNLOAD*/);
-  
-    var reportSuccess = function(fetch, xhr, e) {
-      if (onsuccess && typeof dynCall === 'function') Module['dynCall_vi'](onsuccess, fetch);
-      else if (successcb) successcb(fetch);
-    };
-  
-    var cacheResultAndReportSuccess = function(fetch, xhr, e) {
-      var storeSuccess = function(fetch, xhr, e) {
-        if (onsuccess && typeof dynCall === 'function') Module['dynCall_vi'](onsuccess, fetch);
-        else if (successcb) successcb(fetch);
-      };
-      var storeError = function(fetch, xhr, e) {
-        if (onsuccess && typeof dynCall === 'function') Module['dynCall_vi'](onsuccess, fetch);
-        else if (successcb) successcb(fetch);
-      };
-      __emscripten_fetch_cache_data(Fetch.dbInstance, fetch, xhr.response, storeSuccess, storeError);
-    };
-  
-    var reportProgress = function(fetch, xhr, e) {
-      if (onprogress && typeof dynCall === 'function') Module['dynCall_vi'](onprogress, fetch);
-      else if (progresscb) progresscb(fetch);
-    };
-  
-    var reportError = function(fetch, xhr, e) {
-      if (onerror && typeof dynCall === 'function') Module['dynCall_vi'](onerror, fetch);
-      else if (errorcb) errorcb(fetch);
-    };
-  
-    var performUncachedXhr = function(fetch, xhr, e) {
-      __emscripten_fetch_xhr(fetch, reportSuccess, reportError, reportProgress);
-    };
-  
-    var performCachedXhr = function(fetch, xhr, e) {
-      __emscripten_fetch_xhr(fetch, cacheResultAndReportSuccess, reportError, reportProgress);
-    };
-  
-    // Should we try IndexedDB first?
-    if (!fetchAttrReplace || requestMethod === 'EM_IDB_STORE' || requestMethod === 'EM_IDB_DELETE') {
-      if (!Fetch.dbInstance) {
-        reportError(fetch, 0, 'IndexedDB is not open');
-        return 0; // todo: free
-      }
-  
-      if (requestMethod === 'EM_IDB_STORE') {
-        var dataPtr = HEAPU32[fetch_attr + Fetch.attr_t_offset_requestData >> 2];
-        var dataLength = HEAPU32[fetch_attr + Fetch.attr_t_offset_requestDataSize >> 2];
-        var data = HEAPU8.slice(dataPtr, dataPtr + dataLength); // TODO(?): Here we perform a clone of the data, because storing shared typed arrays to IndexedDB does not seem to be allowed.
-        __emscripten_fetch_cache_data(Fetch.dbInstance, fetch, data, reportSuccess, reportError);
-      } else if (requestMethod === 'EM_IDB_DELETE') {
-        __emscripten_fetch_delete_cached_data(Fetch.dbInstance, fetch, reportSuccess, reportError);
-      } else if (fetchAttrNoDownload) {
-        __emscripten_fetch_load_cached_data(Fetch.dbInstance, fetch, reportSuccess, reportError);
-      } else if (fetchAttrPersistFile) {
-        __emscripten_fetch_load_cached_data(Fetch.dbInstance, fetch, reportSuccess, performCachedXhr);
-      } else {
-        __emscripten_fetch_load_cached_data(Fetch.dbInstance, fetch, reportSuccess, performUncachedXhr);
-      }
-    } else if (!fetchAttrNoDownload) {
-      if (fetchAttrPersistFile) {
-        __emscripten_fetch_xhr(fetch, cacheResultAndReportSuccess, reportError, reportProgress);
-      } else {
-        __emscripten_fetch_xhr(fetch, reportSuccess, reportError, reportProgress);
-      }
-    } else {
-      return 0; // todo: free
-    }
-    return fetch;
-  }
-
-   
-
-  
-  function _emscripten_memcpy_big(dest, src, num) {
-      HEAPU8.set(HEAPU8.subarray(src, src+num), dest);
-      return dest;
-    } 
-
-   
-
-  
-  function ___setErrNo(value) {
-      if (Module['___errno_location']) HEAP32[((Module['___errno_location']())>>2)]=value;
-      return value;
-    } 
-Fetch.staticInit();;
-DYNAMICTOP_PTR = staticAlloc(4);
-
-STACK_BASE = STACKTOP = alignMemory(STATICTOP);
-
-STACK_MAX = STACK_BASE + TOTAL_STACK;
-
-DYNAMIC_BASE = alignMemory(STACK_MAX);
-
-HEAP32[DYNAMICTOP_PTR>>2] = DYNAMIC_BASE;
-
-staticSealed = true; // seal the static portion of memory
-
-var ASSERTIONS = false;
-
-// Copyright 2017 The Emscripten Authors.  All rights reserved.
-// Emscripten is available under two separate licenses, the MIT license and the
-// University of Illinois/NCSA Open Source License.  Both these licenses can be
-// found in the LICENSE file.
-
-/** @type {function(string, boolean=, number=)} */
-function intArrayFromString(stringy, dontAddNull, length) {
-  var len = length > 0 ? length : lengthBytesUTF8(stringy)+1;
-  var u8array = new Array(len);
-  var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
-  if (dontAddNull) u8array.length = numBytesWritten;
-  return u8array;
-}
-
-function intArrayToString(array) {
-  var ret = [];
-  for (var i = 0; i < array.length; i++) {
-    var chr = array[i];
-    if (chr > 0xFF) {
-      if (ASSERTIONS) {
-        assert(false, 'Character code ' + chr + ' (' + String.fromCharCode(chr) + ')  at offset ' + i + ' not in 0x00-0xFF.');
-      }
-      chr &= 0xFF;
-    }
-    ret.push(String.fromCharCode(chr));
-  }
-  return ret.join('');
-}
-
-
-
-Module['wasmTableSize'] = 18;
-
-Module['wasmMaxTableSize'] = 18;
-
-Module.asmGlobalArg = {};
-
-Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "setTempRet0": setTempRet0, "getTempRet0": getTempRet0, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "_ERROR": _ERROR, "_SetupLocalStorage": _SetupLocalStorage, "___setErrNo": ___setErrNo, "___syscall140": ___syscall140, "___syscall146": ___syscall146, "___syscall54": ___syscall54, "___syscall6": ___syscall6, "__emscripten_fetch_cache_data": __emscripten_fetch_cache_data, "__emscripten_fetch_delete_cached_data": __emscripten_fetch_delete_cached_data, "__emscripten_fetch_load_cached_data": __emscripten_fetch_load_cached_data, "__emscripten_fetch_xhr": __emscripten_fetch_xhr, "__emscripten_get_fetch_work_queue": __emscripten_get_fetch_work_queue, "_alert": _alert, "_emscripten_is_main_browser_thread": _emscripten_is_main_browser_thread, "_emscripten_is_main_runtime_thread": _emscripten_is_main_runtime_thread, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_emscripten_start_fetch": _emscripten_start_fetch, "_generateSignedTransaction": _generateSignedTransaction, "_getAddress": _getAddress, "_getLoginName": _getLoginName, "_retrievePrice": _retrievePrice, "_setName": _setName, "flush_NO_FILESYSTEM": flush_NO_FILESYSTEM, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX };
-// EMSCRIPTEN_START_ASM
-var asm =Module["asm"]// EMSCRIPTEN_END_ASM
-(Module.asmGlobalArg, Module.asmLibraryArg, buffer);
-
-Module["asm"] = asm;
-var _ETHToUSD = Module["_ETHToUSD"] = function() {  return Module["asm"]["_ETHToUSD"].apply(null, arguments) };
-var _USDToETH = Module["_USDToETH"] = function() {  return Module["asm"]["_USDToETH"].apply(null, arguments) };
-var _USERVER_NEW = Module["_USERVER_NEW"] = function() {  return Module["asm"]["_USERVER_NEW"].apply(null, arguments) };
-var _USERVER_SetupMetadata = Module["_USERVER_SetupMetadata"] = function() {  return Module["asm"]["_USERVER_SetupMetadata"].apply(null, arguments) };
-var ___em_js__ERROR = Module["___em_js__ERROR"] = function() {  return Module["asm"]["___em_js__ERROR"].apply(null, arguments) };
-var ___em_js__SetupLocalStorage = Module["___em_js__SetupLocalStorage"] = function() {  return Module["asm"]["___em_js__SetupLocalStorage"].apply(null, arguments) };
-var ___em_js__alert = Module["___em_js__alert"] = function() {  return Module["asm"]["___em_js__alert"].apply(null, arguments) };
-var ___em_js__generateSignedTransaction = Module["___em_js__generateSignedTransaction"] = function() {  return Module["asm"]["___em_js__generateSignedTransaction"].apply(null, arguments) };
-var ___em_js__getAddress = Module["___em_js__getAddress"] = function() {  return Module["asm"]["___em_js__getAddress"].apply(null, arguments) };
-var ___em_js__getLoginName = Module["___em_js__getLoginName"] = function() {  return Module["asm"]["___em_js__getLoginName"].apply(null, arguments) };
-var ___em_js__retrievePrice = Module["___em_js__retrievePrice"] = function() {  return Module["asm"]["___em_js__retrievePrice"].apply(null, arguments) };
-var ___em_js__setName = Module["___em_js__setName"] = function() {  return Module["asm"]["___em_js__setName"].apply(null, arguments) };
-var ___errno_location = Module["___errno_location"] = function() {  return Module["asm"]["___errno_location"].apply(null, arguments) };
-var _free = Module["_free"] = function() {  return Module["asm"]["_free"].apply(null, arguments) };
-var _llvm_bswap_i32 = Module["_llvm_bswap_i32"] = function() {  return Module["asm"]["_llvm_bswap_i32"].apply(null, arguments) };
-var _main = Module["_main"] = function() {  return Module["asm"]["_main"].apply(null, arguments) };
-var _malloc = Module["_malloc"] = function() {  return Module["asm"]["_malloc"].apply(null, arguments) };
-var _memcpy = Module["_memcpy"] = function() {  return Module["asm"]["_memcpy"].apply(null, arguments) };
-var _memset = Module["_memset"] = function() {  return Module["asm"]["_memset"].apply(null, arguments) };
-var _sbrk = Module["_sbrk"] = function() {  return Module["asm"]["_sbrk"].apply(null, arguments) };
-var establishStackSpace = Module["establishStackSpace"] = function() {  return Module["asm"]["establishStackSpace"].apply(null, arguments) };
-var setThrew = Module["setThrew"] = function() {  return Module["asm"]["setThrew"].apply(null, arguments) };
-var stackAlloc = Module["stackAlloc"] = function() {  return Module["asm"]["stackAlloc"].apply(null, arguments) };
-var stackRestore = Module["stackRestore"] = function() {  return Module["asm"]["stackRestore"].apply(null, arguments) };
-var stackSave = Module["stackSave"] = function() {  return Module["asm"]["stackSave"].apply(null, arguments) };
-var dynCall_ii = Module["dynCall_ii"] = function() {  return Module["asm"]["dynCall_ii"].apply(null, arguments) };
-var dynCall_iiii = Module["dynCall_iiii"] = function() {  return Module["asm"]["dynCall_iiii"].apply(null, arguments) };
-var dynCall_vi = Module["dynCall_vi"] = function() {  return Module["asm"]["dynCall_vi"].apply(null, arguments) };
 ;
 
+// Frame throttling
 
+var frameId = 0;
 
-// === Auto-generated postamble setup entry stuff ===
+// Temporarily handling this at run-time pending Python preprocessor support
 
-Module['asm'] = asm;
+var SUPPORT_BASE64_EMBEDDING;
 
+// Worker
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @constructor
- * @extends {Error}
- * @this {ExitStatus}
- */
-function ExitStatus(status) {
-  this.name = "ExitStatus";
-  this.message = "Program terminated with exit(" + status + ")";
-  this.status = status;
-};
-ExitStatus.prototype = new Error();
-ExitStatus.prototype.constructor = ExitStatus;
-
-var initialStackTop;
-var calledMain = false;
-
-dependenciesFulfilled = function runCaller() {
-  // If run has never been called, and we should call run (INVOKE_RUN is true, and Module.noInitialRun is not false)
-  if (!Module['calledRun']) run();
-  if (!Module['calledRun']) dependenciesFulfilled = runCaller; // try this again later, after new deps are fulfilled
+var filename;
+if (!filename) {
+  filename = 'index.worker.js';
 }
 
-Module['callMain'] = function callMain(args) {
-
-  args = args || [];
-
-  ensureInitRuntime();
-
-  var argc = args.length+1;
-  var argv = stackAlloc((argc + 1) * 4);
-  HEAP32[argv >> 2] = allocateUTF8OnStack(Module['thisProgram']);
-  for (var i = 1; i < argc; i++) {
-    HEAP32[(argv >> 2) + i] = allocateUTF8OnStack(args[i - 1]);
+var workerURL = filename;
+if (SUPPORT_BASE64_EMBEDDING) {
+  var fileBytes = tryParseAsDataURI(filename);
+  if (fileBytes) {
+    workerURL = URL.createObjectURL(new Blob([fileBytes], {type: 'application/javascript'}));
   }
-  HEAP32[(argv >> 2) + argc] = 0;
+}
+var worker = new Worker(workerURL);
 
+WebGLClient.prefetch();
 
-  try {
+setTimeout(function() {
+  worker.postMessage({
+    target: 'worker-init',
+    width: Module.canvas.width,
+    height: Module.canvas.height,
+    boundingClientRect: cloneObject(Module.canvas.getBoundingClientRect()),
+    URL: document.URL,
+    currentScriptUrl: filename,
+    preMain: true });
+}, 0); // delay til next frame, to make sure html is ready
 
-    var ret = Module['_main'](argc, argv, 0);
+var workerResponded = false;
 
-
-    // if we're not running an evented main loop, it's time to exit
-      exit(ret, /* implicit = */ true);
+worker.onmessage = function worker_onmessage(event) {
+  //dump('\nclient got ' + JSON.stringify(event.data).substr(0, 150) + '\n');
+  if (!workerResponded) {
+    workerResponded = true;
+    if (Module.setStatus) Module.setStatus('');
+    if (SUPPORT_BASE64_EMBEDDING && workerURL !== filename) URL.revokeObjectURL(workerURL);
   }
-  catch(e) {
-    if (e instanceof ExitStatus) {
-      // exit() throws this once it's done to make sure execution
-      // has been stopped completely
-      return;
-    } else if (e == 'SimulateInfiniteLoop') {
-      // running an evented main loop, don't immediately exit
-      Module['noExitRuntime'] = true;
-      return;
-    } else {
-      var toLog = e;
-      if (e && typeof e === 'object' && e.stack) {
-        toLog = [e, e.stack];
-      }
-      err('exception thrown: ' + toLog);
-      Module['quit'](1, e);
+
+  var data = event.data;
+  switch (data.target) {
+    case 'stdout': {
+      Module['print'](data.content);
+      break;
     }
-  } finally {
-    calledMain = true;
+    case 'stderr': {
+      Module['printErr'](data.content);
+      break;
+    }
+    case 'window': {
+      window[data.method]();
+      break;
+    }
+    case 'canvas': {
+      switch (data.op) {
+        case 'getContext': {
+          Module.ctx = Module.canvas.getContext(data.type, data.attributes);
+          if (data.type !== '2d') {
+            // possible GL_DEBUG entry point: Module.ctx = wrapDebugGL(Module.ctx);
+            Module.glClient = new WebGLClient();
+          }
+          break;
+        }
+        case 'resize': {
+          Module.canvas.width = data.width;
+          Module.canvas.height = data.height;
+          if (Module.ctx && Module.ctx.getImageData) Module.canvasData = Module.ctx.getImageData(0, 0, data.width, data.height);
+          worker.postMessage({ target: 'canvas', boundingClientRect: cloneObject(Module.canvas.getBoundingClientRect()) });
+          break;
+        }
+        case 'render': {
+          if (renderFrameData) {
+            // previous image was not rendered yet, just update image
+            renderFrameData = data.image.data;
+          } else {
+            // previous image was rendered so update image and request another frame
+            renderFrameData = data.image.data;
+            window.requestAnimationFrame(renderFrame);
+          }
+          break;
+        }
+        case 'setObjectProperty': {
+          Module.canvas[data.object][data.property] = data.value;
+          break;
+        }
+        default: throw 'eh?';
+      }
+      break;
+    }
+    case 'gl': {
+      Module.glClient.onmessage(data);
+      break;
+    }
+    case 'tick': {
+      frameId = data.id;
+      worker.postMessage({ target: 'tock', id: frameId });
+      break;
+    }
+    case 'Image': {
+      assert(data.method === 'src');
+      var img = new Image();
+      img.onload = function() {
+        assert(img.complete);
+        var canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        var imageData = ctx.getImageData(0, 0, img.width, img.height);
+        worker.postMessage({ target: 'Image', method: 'onload', id: data.id, width: img.width, height: img.height, data: imageData.data, preMain: true });
+      };
+      img.onerror = function() {
+        worker.postMessage({ target: 'Image', method: 'onerror', id: data.id, preMain: true });
+      };
+      img.src = data.src;
+      break;
+    }
+    case 'IDBStore': {
+      switch (data.method) {
+        case 'loadBlob': {
+          IDBStore.getFile(data.db, data.id, function(error, blob) {
+            worker.postMessage({
+              target: 'IDBStore',
+              method: 'response',
+              blob: error ? null : blob
+            });
+          });
+          break;
+        }
+        case 'storeBlob': {
+          IDBStore.setFile(data.db, data.id, data.blob, function(error) {
+            worker.postMessage({
+              target: 'IDBStore',
+              method: 'response',
+              error: !!error
+            });
+          });
+          break;
+        }
+      }
+      break;
+    }
+    case 'custom': {
+      if (Module['onCustomMessage']) {
+        Module['onCustomMessage'](event);
+      } else {
+        throw 'Custom message received but client Module.onCustomMessage not implemented.';
+      }
+      break;
+    }
+    case 'setimmediate': {
+      worker.postMessage({target: 'setimmediate'});
+      break;
+    }
+    default: throw 'what? ' + data.target;
   }
+};
+
+function postCustomMessage(data, options) {
+  options = options || {};
+  worker.postMessage({ target: 'custom', userData: data, preMain: options.preMain });
 }
 
-
-
-
-/** @type {function(Array=)} */
-function run(args) {
-  args = args || Module['arguments'];
-
-  if (runDependencies > 0) {
-    return;
+function cloneObject(event) {
+  var ret = {};
+  for (var x in event) {
+    if (x == x.toUpperCase()) continue;
+    var prop = event[x];
+    if (typeof prop === 'number' || typeof prop === 'string') ret[x] = prop;
   }
+  return ret;
+};
 
-
-  preRun();
-
-  if (runDependencies > 0) return; // a preRun added a dependency, run will be called later
-  if (Module['calledRun']) return; // run may have just been called through dependencies being fulfilled just in this very frame
-
-  function doRun() {
-    if (Module['calledRun']) return; // run may have just been called while the async setStatus time below was happening
-    Module['calledRun'] = true;
-
-    if (ABORT) return;
-
-    ensureInitRuntime();
-
-    preMain();
-
-    if (Module['onRuntimeInitialized']) Module['onRuntimeInitialized']();
-
-    if (Module['_main'] && shouldRunNow) Module['callMain'](args);
-
-    postRun();
-  }
-
-  if (Module['setStatus']) {
-    Module['setStatus']('Running...');
-    setTimeout(function() {
-      setTimeout(function() {
-        Module['setStatus']('');
-      }, 1);
-      doRun();
-    }, 1);
+// Only prevent default on backspace/tab because we don't want unexpected navigation.
+// Do not prevent default on the rest as we need the keypress event.
+function shouldPreventDefault(event) {
+  if (event.type === 'keydown' && event.keyCode !== 8 /* backspace */ && event.keyCode !== 9 /* tab */) {
+    return false; // keypress, back navigation
   } else {
-    doRun();
+    return true; // NO keypress, NO back navigation
   }
-}
-Module['run'] = run;
+};
 
+['keydown', 'keyup', 'keypress', 'blur', 'visibilitychange'].forEach(function(event) {
+  document.addEventListener(event, function(event) {
+    worker.postMessage({ target: 'document', event: cloneObject(event) });
+    
+    if (shouldPreventDefault(event)) {
+      event.preventDefault();
+    }
+  });
+});
 
-function exit(status, implicit) {
+['unload'].forEach(function(event) {
+  window.addEventListener(event, function(event) {
+    worker.postMessage({ target: 'window', event: cloneObject(event) });
+  });
+});
 
-  // if this is just main exit-ing implicitly, and the status is 0, then we
-  // don't need to do anything here and can just leave. if the status is
-  // non-zero, though, then we need to report it.
-  // (we may have warned about this earlier, if a situation justifies doing so)
-  if (implicit && Module['noExitRuntime'] && status === 0) {
-    return;
-  }
-
-  if (Module['noExitRuntime']) {
-  } else {
-
-    ABORT = true;
-    EXITSTATUS = status;
-    STACKTOP = initialStackTop;
-
-    exitRuntime();
-
-    if (Module['onExit']) Module['onExit'](status);
-  }
-
-  Module['quit'](status, new ExitStatus(status));
-}
-
-var abortDecorators = [];
-
-function abort(what) {
-  if (Module['onAbort']) {
-    Module['onAbort'](what);
-  }
-
-  if (what !== undefined) {
-    out(what);
-    err(what);
-    what = JSON.stringify(what)
-  } else {
-    what = '';
-  }
-
-  ABORT = true;
-  EXITSTATUS = 1;
-
-  throw 'abort(' + what + '). Build with -s ASSERTIONS=1 for more info.';
-}
-Module['abort'] = abort;
-
-if (Module['preInit']) {
-  if (typeof Module['preInit'] == 'function') Module['preInit'] = [Module['preInit']];
-  while (Module['preInit'].length > 0) {
-    Module['preInit'].pop()();
-  }
-}
-
-// shouldRunNow refers to calling main(), not run().
-var shouldRunNow = true;
-if (Module['noInitialRun']) {
-  shouldRunNow = false;
-}
-
-  Module["noExitRuntime"] = true;
-
-run();
-
-
-
-
-
-// {{MODULE_ADDITIONS}}
-
-
+['mousedown', 'mouseup', 'mousemove', 'DOMMouseScroll', 'mousewheel', 'mouseout'].forEach(function(event) {
+  Module.canvas.addEventListener(event, function(event) {
+    worker.postMessage({ target: 'canvas', event: cloneObject(event) });
+    event.preventDefault();
+  }, true);
+});
 

@@ -60,3 +60,9 @@ EM_JS(int , SetupLocalStorage, (const char* json), {
 EM_JS(void, alert, (char* str), {
   alert(UTF8ToString(str));
 })
+
+EM_JS(char *, getElementById, (char* id), {
+  var value = document.getElementById(UTF8ToString(id)).value;
+  console.log(value);
+  return allocate(intArrayFromString(value), 'i8', ALLOC_NORMAL);
+})

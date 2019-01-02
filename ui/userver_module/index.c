@@ -32,8 +32,7 @@
 // return name of
 void EMSCRIPTEN_KEEPALIVE USERVER_SetupMetadata(){
 	char * address = malloc(sizeof(char) * 60);
-	sprintf(address, "%s/name/%s", USERVER_ADDRESS, getAddress());
-	GET_Name(address);
+	GET_Name(getAddress());
 }
 
 void EMSCRIPTEN_KEEPALIVE USERVER_NEW() {
