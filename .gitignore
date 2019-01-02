@@ -10,4 +10,5 @@ p2perinik.bin
 node_modules/
 interface/index.js
 interface/index.wasm
-interface/index.worker.wasm
+interface/index.worker.js
+
