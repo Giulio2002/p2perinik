@@ -44,9 +44,11 @@ EM_JS(void, setName, (const char* str), {
   document.getElementById("name").innerHTML = json.name;
 })
 
-EM_JS(int , SetupLocalStorage, (const char* json), {
-  console.log(UTF8ToString(json));	 
-  let tmp = JSON.parse(UTF8ToString(json));	
+EM_JS(int , SetupLocalStorage, (const char* json), { 
+  let tmp = JSON.parse(UTF8ToString(json).substring(
+    0, 
+    UTF8ToString(json).lastIndexOf("}") + 1
+  ));	
   if (tmp.address === undefined) {
 	  	alert(tmp.error);
 	  	window.location.href = 'http://localhost:4200/';
